@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics · Parth's Pit Wall</title>
+  <meta name="description" content="F1 2026 season points trajectory charts for drivers and constructors — Parth's Pit Wall Analytics.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --carbon: #0a0a0a;
+      --carbon-2: #131313;
+      --carbon-3: #1d1d1d;
+      --paper: #f2ece0;
+      --paper-2: #e8e1d2;
+      --paper-3: #d8d0bf;
+      --ink: #0a0a0a;
+      --ink-2: #4a4438;
+      --ink-3: #8a8172;
+      --racing: #e10600;
+      --racing-hot: #ff2010;
+      --gold: #d4a017;
+      --rule-light: #d4cec4;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes fadeUpSlow {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlow {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    .site-nav {
+      background: var(--carbon);
+      height: 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      animation: fadeSlow 0.5s ease both;
+    }
+    .nav-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 36px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-checker {
+      width: 26px;
+      height: 16px;
+      background:
+        linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%),
+        linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%);
+      background-size: 6px 6px;
+      background-position: 0 0, 3px 3px;
+      background-color: #000;
+      flex-shrink: 0;
+    }
+    .nav-brand-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-style: italic;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand-text em { color: var(--racing-hot); }
+    .nav-links { display: flex; height: 100%; }
+    .nav-link {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      transition: color 0.2s;
+      height: 100%;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 18px;
+      right: 18px;
+      height: 2px;
+      background: var(--racing);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.25s ease;
+    }
+    .nav-link:hover { color: rgba(255,255,255,0.85); }
+    .nav-link:hover::after { transform: scaleX(0.5); }
+    .nav-link.active { color: #fff; }
+    .nav-link.active::after { transform: scaleX(1); }
+
+    /* ── TICKER ── */
+    .ticker-wrap {
+      background: var(--carbon);
+      height: 44px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid var(--racing);
+      position: relative;
+      animation: fadeSlow 0.9s ease both;
+    }
+    .ticker-wrap::before, .ticker-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .ticker-wrap::before { left: 0; background: linear-gradient(90deg, var(--carbon), transparent); }
+    .ticker-wrap::after { right: 0; background: linear-gradient(270deg, var(--carbon), transparent); }
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 52s linear infinite;
+      will-change: transform;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    .tick {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 26px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .08em;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+    }
+    .tick .sym { color: var(--racing-hot); font-weight: 600; letter-spacing: .14em; }
+    .tick .val { color: #fff; font-weight: 600; }
+    .tick-dot { color: rgba(255,255,255,.2); padding: 0 4px; font-size: 9px; }
+
+    /* ── HERO ── */
+    .analytics-hero {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 52px 36px 40px;
+      animation: fadeUpSlow 0.8s ease both 0.2s;
+    }
+    .analytics-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--racing);
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .analytics-eyebrow::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: var(--racing);
+      border-radius: 50%;
+      animation: pulseDot 1.8s ease infinite;
+    }
+    .analytics-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(44px, 7vw, 96px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      line-height: 0.95;
+      margin-bottom: 20px;
+    }
+    .analytics-title em {
+      font-style: italic;
+      color: var(--racing);
+      font-weight: 500;
+    }
+    .analytics-desc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      border-top: 1px solid var(--ink);
+      padding-top: 18px;
+    }
+
+    /* ── CHART SECTIONS ── */
+    .chart-section-wrap {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 36px;
+    }
+    .chart-section {
+      background: var(--carbon);
+      padding: 42px 48px 48px;
+      margin-bottom: 3px;
+      position: relative;
+      border-top: 4px solid var(--racing);
+      animation: fadeUpSlow 0.8s ease both 0.4s;
+    }
+    .chart-section.second {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      animation-delay: 0.55s;
+    }
+    .chart-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 16px);
+      pointer-events: none;
+    }
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .chart-section-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      font-weight: 600;
+      margin-bottom: 9px;
+    }
+    .chart-section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 7px;
+    }
+    .chart-section-title em { font-style: italic; color: var(--racing-hot); font-weight: 500; }
+    .chart-section-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .16em;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+    }
+
+    /* Filter buttons */
+    .chart-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-start; }
+    .filter-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover {
+      color: rgba(255,255,255,0.85);
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1);
+    }
+    .filter-btn.active {
+      color: #fff;
+      background: var(--racing);
+      border-color: var(--racing);
+    }
+
+    /* Canvas wrapper */
+    .chart-canvas-wrap {
+      height: 430px;
+      position: relative;
+      z-index: 1;
+    }
+    .chart-canvas-wrap.short { height: 380px; }
+
+    .chart-loading, .chart-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+    }
+    .chart-loading-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+    }
+    .chart-loading-dot {
+      width: 8px; height: 8px;
+      background: var(--racing);
+      border-radius: 50%;
+      animation: pulseDot 1.4s ease infinite;
+    }
+    .chart-empty-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: rgba(255,255,255,0.25);
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    .footer-wrap {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 32px 36px 40px;
+    }
+    .footer {
+      border-top: 1px solid var(--ink);
+      padding-top: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .f-note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--ink-3);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .f-dot {
+      display: inline-block;
+      width: 4px; height: 4px;
+      background: var(--racing);
+      vertical-align: middle;
+      margin: 0 8px;
+      border-radius: 50%;
+      position: relative;
+      top: -2px;
+    }
+    .f-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      font-style: italic;
+      color: var(--ink-2);
+    }
+    .f-brand em { color: var(--racing); font-weight: 500; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 980px) {
+      .analytics-hero, .chart-section-wrap, .footer-wrap { padding-left: 20px; padding-right: 20px; }
+      .chart-section { padding: 28px 22px 32px; }
+      .chart-head { flex-direction: column; }
+      .chart-canvas-wrap { height: 320px; }
+      .chart-canvas-wrap.short { height: 280px; }
+      .nav-inner { padding: 0 20px; }
+    }
+    @media (max-width: 540px) {
+      .nav-link { padding: 0 12px; font-size: 9px; }
+      .analytics-title { font-size: 42px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="F1_Dashboard.html" class="nav-logo-link">
+        <span class="nav-checker"></span>
+        <span class="nav-brand-text">Pit <em>Wall</em></span>
+      </a>
+      <div class="nav-links">
+        <a href="F1_Dashboard.html" class="nav-link">Dashboard</a>
+        <a href="analytics.html" class="nav-link active" aria-current="page">Analytics</a>
+        <a href="drivers.html" class="nav-link">Drivers</a>
+        <a href="teams.html" class="nav-link">Teams</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Ticker -->
+  <div class="ticker-wrap" role="marquee" aria-label="Live ticker">
+    <div class="ticker-track" id="tkTrack"></div>
+  </div>
+
+  <!-- Hero -->
+  <section class="analytics-hero">
+    <div class="analytics-eyebrow">Season Data · Live</div>
+    <h1 class="analytics-title">Points <em>Trajectory</em></h1>
+    <p class="analytics-desc">Championship points · Race by race · 2026 Season</p>
+  </section>
+
+  <!-- Chart Sections -->
+  <div class="chart-section-wrap">
+
+    <!-- Driver Trajectory -->
+    <section class="chart-section" id="driver-chart-section">
+      <div class="chart-head">
+        <div>
+          <div class="chart-section-num">§ 01</div>
+          <div class="chart-section-title">Drivers' <em>Championship</em></div>
+
+        </div>
+        <div class="chart-filters" id="driverFilters" role="group" aria-label="Filter drivers">
+          <button class="filter-btn active" data-driver-filter="5" id="filter-top5">Top 5</button>
+          <button class="filter-btn" data-driver-filter="10" id="filter-top10">Top 10</button>
+          <button class="filter-btn" data-driver-filter="999" id="filter-all">All Drivers</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap" id="driverChartWrap">
+        <div class="chart-loading">
+          <div class="chart-loading-dot"></div>
+          <div class="chart-loading-text">Fetching season data</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Constructor Trajectory -->
+    <section class="chart-section second" id="constructor-chart-section">
+      <div class="chart-head">
+        <div>
+          <div class="chart-section-num">§ 02</div>
+          <div class="chart-section-title">Constructors' <em>Cup</em></div>
+          <div class="chart-section-sub">Cumulative points per team · round by round</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap short" id="constructorChartWrap">
+        <div class="chart-loading">
+          <div class="chart-loading-dot"></div>
+          <div class="chart-loading-text">Fetching season data</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-wrap">
+    <footer class="footer">
+      <div class="f-note"><span class="f-dot"></span>Lights out and away we go</div>
+      <div class="f-brand">The <em>Pit Wall</em></div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const t = document.getElementById('tkTrack');
+      const mk = () => '<span class="tick"><span class="sym">Analytics</span> <span class="val">F1 2026</span></span><span class="tick tick-dot">◆</span>';
+      t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
+    })();
+  </script>
+  <script src="analytics.js"></script>
+</body>
+
+</html>
