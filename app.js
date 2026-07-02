@@ -557,6 +557,38 @@ function renderSchedule(race, container) {
   container.innerHTML = html;
 }
 
+function formatIntervalMs(diffMs) {
+  if (diffMs < 0 || isNaN(diffMs)) return '—';
+  if (diffMs === 0) return '+0.000';
+  const totalSecs = diffMs / 1000;
+  if (totalSecs < 60) {
+    return `+${totalSecs.toFixed(3)}`;
+  }
+  const mins = Math.floor(totalSecs / 60);
+  const secs = (totalSecs % 60).toFixed(3);
+  return `+${mins}:${secs.padStart(6, '0')}`;
+}
+
+function getDriverTotalMs(res, p1TotalMs) {
+  if (res.Time?.millis && !isNaN(parseInt(res.Time.millis))) {
+    let ms = parseInt(res.Time.millis);
+    if (ms < 1000000 && p1TotalMs > 0) return p1TotalMs + ms;
+    return ms;
+  }
+  if (res.Time?.time) {
+    const clean = res.Time.time.replace(/^\++/, '').trim();
+    const parts = clean.split(':');
+    let ms = 0;
+    if (parts.length === 3) ms = Math.round(parseFloat(parts[0])*3600000 + parseFloat(parts[1])*60000 + parseFloat(parts[2])*1000);
+    else if (parts.length === 2) ms = Math.round(parseFloat(parts[0])*60000 + parseFloat(parts[1])*1000);
+    else if (parts.length === 1 && !isNaN(parseFloat(parts[0]))) ms = Math.round(parseFloat(parts[0])*1000);
+    else return null;
+    if (ms < 1000000 && p1TotalMs > 0) return p1TotalMs + ms;
+    return ms;
+  }
+  return null;
+}
+
 function renderRaceResults(results, container) {
   if (!results.length) {
     container.innerHTML = '<div class="rm-blank"><div class="rm-blank-title">No results available</div></div>';
@@ -564,19 +596,72 @@ function renderRaceResults(results, container) {
   }
   let html = `<table class="rm-results-table">
     <thead><tr>
-      <th>Pos</th><th>Driver</th><th style="text-align:right">Time / Status</th><th style="text-align:right">Pts</th>
+      <th>Pos</th><th>Driver</th><th style="text-align:right">Time / Leader</th><th style="text-align:right">Interval</th><th style="text-align:right">Pts</th><th style="text-align:right">Laps</th>
     </tr></thead><tbody>`;
+
+  const p1Laps = results[0]?.laps ? parseInt(results[0].laps) : 0;
+  const p1TotalMs = getDriverTotalMs(results[0], 0) || 0;
 
   results.forEach((r, i) => {
     const pos     = parseInt(r.position);
     const posClass = pos === 1 ? 'p1' : pos === 2 ? 'p2' : pos === 3 ? 'p3' : '';
     const hex     = getTeamHex(r.Constructor.constructorId);
     const isFl    = r.FastestLap?.rank === '1';
-    let timeStr;
-    if (i === 0 && r.Time?.time)      timeStr = r.Time.time;
-    else if (r.Time?.time)             timeStr = `+${r.Time.time}`;
-    else if (r.status !== 'Finished') timeStr = r.status;
-    else                               timeStr = 'Finished';
+    
+    // 1. Time from race leader
+    let leaderGapStr;
+    if (i === 0) {
+      leaderGapStr = r.Time?.time || r.status || 'Finished';
+    } else if (r.status === 'Finished' || parseInt(r.laps || 0) === p1Laps) {
+      if (r.Time?.time) {
+        const cleanTime = r.Time.time.replace(/^\++/, '').trim();
+        leaderGapStr = `+${cleanTime}`;
+      } else {
+        leaderGapStr = r.status || '—';
+      }
+    } else if (r.status === 'Lapped' || (parseInt(r.laps || 0) < p1Laps && !['Retired', 'Did not start', 'Accident', 'Collision', 'Engine', 'Hydraulics', 'Gearbox', 'Brakes', 'Withdrew', 'Disqualified'].includes(r.status))) {
+      const lapsDown = p1Laps - parseInt(r.laps || 0);
+      leaderGapStr = lapsDown > 0 ? `+${lapsDown} ${lapsDown === 1 ? 'Lap' : 'Laps'}` : (r.status || 'Lapped');
+    } else {
+      leaderGapStr = r.status || '—';
+    }
+
+    // 2. Internal gap of each driver (Interval to car ahead)
+    let intervalStr = '—';
+    if (i > 0) {
+      const prev = results[i - 1];
+      const isDnfThis = !['Finished', 'Lapped'].includes(r.status) && !r.status?.startsWith('+') && !r.Time;
+      if (isDnfThis) {
+        intervalStr = '—';
+      } else {
+        const isLeadLapThis = r.status === 'Finished' || parseInt(r.laps || 0) === p1Laps;
+        const isLeadLapPrev = prev.status === 'Finished' || parseInt(prev.laps || 0) === p1Laps;
+
+        if (isLeadLapThis && isLeadLapPrev) {
+          const msThis = getDriverTotalMs(r, p1TotalMs);
+          const msPrev = getDriverTotalMs(prev, p1TotalMs);
+          if (msThis !== null && msPrev !== null && msThis >= msPrev) {
+            intervalStr = formatIntervalMs(msThis - msPrev);
+          } else if (r.Time?.time) {
+            const clean = r.Time.time.replace(/^\++/, '').trim();
+            intervalStr = `+${clean}`;
+          }
+        } else if (parseInt(prev.laps || 0) > parseInt(r.laps || 0)) {
+          const lapDiff = parseInt(prev.laps || 0) - parseInt(r.laps || 0);
+          intervalStr = `+${lapDiff} ${lapDiff === 1 ? 'Lap' : 'Laps'}`;
+        } else if (r.laps && r.laps === prev.laps) {
+          const msThis = getDriverTotalMs(r, p1TotalMs);
+          const msPrev = getDriverTotalMs(prev, p1TotalMs);
+          if (msThis !== null && msPrev !== null && msThis >= msPrev) {
+            intervalStr = formatIntervalMs(msThis - msPrev);
+          } else {
+            intervalStr = r.status !== 'Finished' ? r.status : '—';
+          }
+        } else {
+          intervalStr = '—';
+        }
+      }
+    }
 
     const timeStyle = isFl ? 'color:#df99df; font-weight:700;' : '';
 
@@ -586,8 +671,10 @@ function renderRaceResults(results, container) {
         <div class="rm-rdriver">${r.Driver.givenName.charAt(0)}. ${r.Driver.familyName}</div>
         <div class="rm-rteam"><span class="rm-team-bar" style="background:${hex}"></span>${r.Constructor.name}</div>
       </td>
-      <td class="rm-rtime" style="${timeStyle}">${timeStr}</td>
+      <td class="rm-rtime" style="${timeStyle}">${leaderGapStr}</td>
+      <td class="rm-rtime">${intervalStr}</td>
       <td class="rm-rpts">${r.points}</td>
+      <td class="rm-rtime" style="color:rgba(255,255,255,0.45);">${r.laps || '—'}</td>
     </tr>`;
   });
   html += '</tbody></table>';

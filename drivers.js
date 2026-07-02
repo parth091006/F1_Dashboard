@@ -104,14 +104,23 @@ async function fetchWithCache(url, key) {
       if (Date.now() - parsed.ts < 300000) return parsed.data;
     } catch(e) {}
   }
-  const res = await fetch(url);
-  if (!res.ok) {
-    if (cached) return JSON.parse(cached).data;
-    throw new Error('HTTP ' + res.status);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (cached) {
+        try { return JSON.parse(cached).data; } catch(e) {}
+      }
+      return { MRData: { total: "0" } };
+    }
+    const data = await res.json();
+    try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+    return data;
+  } catch (err) {
+    if (cached) {
+      try { return JSON.parse(cached).data; } catch(e) {}
+    }
+    return { MRData: { total: "0" } };
   }
-  const data = await res.json();
-  try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
-  return data;
 }
 
 // ── Render Driver Grid ──
@@ -262,44 +271,28 @@ async function fetchCareerStats(driver) {
   const api = DRIVERS_API;
 
   try {
-    // 5 parallel requests — all return 0 or 1 results but MRData.total is always accurate
-    const [standingsRes, totalRes, p1Res, p2Res, p3Res, flRes] = await Promise.all([
-      fetch(`${api}/drivers/${id}/driverStandings.json?limit=100`),
-      fetch(`${api}/drivers/${id}/results.json?limit=1`),
-      fetch(`${api}/drivers/${id}/results/1.json?limit=1`),
-      fetch(`${api}/drivers/${id}/results/2.json?limit=1`),
-      fetch(`${api}/drivers/${id}/results/3.json?limit=1`),
-      fetch(`${api}/drivers/${id}/fastest/1/results.json?limit=1`),
+    // 6 parallel queries with caching and automatic fallback
+    const [seasonsData, totalData, p1Data, p2Data, p3Data, flData] = await Promise.all([
+      fetchWithCache(`${api}/drivers/${id}/seasons.json?limit=100`, `drv_seas_${id}`),
+      fetchWithCache(`${api}/drivers/${id}/results.json?limit=1`, `drv_tot_${id}`),
+      fetchWithCache(`${api}/drivers/${id}/results/1.json?limit=1`, `drv_p1_${id}`),
+      fetchWithCache(`${api}/drivers/${id}/results/2.json?limit=1`, `drv_p2_${id}`),
+      fetchWithCache(`${api}/drivers/${id}/results/3.json?limit=1`, `drv_p3_${id}`),
+      fetchWithCache(`${api}/drivers/${id}/fastest/1/results.json?limit=1`, `drv_fl_${id}`)
     ]);
 
     if (driver.driverId !== currentDriverId) return; // stale guard
 
-    const safeJson = async (res) => {
-      if (!res.ok) return { MRData: { total: "0" } };
-      try { return await res.json(); } catch(e) { return { MRData: { total: "0" } }; }
-    };
-
-    const seasonsRes = await fetch(`${api}/drivers/${id}/seasons.json?limit=100`);
-    const seasonsData = await safeJson(seasonsRes);
     const allSeasons = seasonsData.MRData?.SeasonTable?.Seasons || [];
     allSeasons.sort((a, b) => parseInt(b.season) - parseInt(a.season));
 
-    const [totalData, p1Data, p2Data, p3Data, flData] = await Promise.all([
-      fetch(`${api}/drivers/${id}/results.json?limit=1`).then(safeJson),
-      fetch(`${api}/drivers/${id}/results/1.json?limit=1`).then(safeJson),
-      fetch(`${api}/drivers/${id}/results/2.json?limit=1`).then(safeJson),
-      fetch(`${api}/drivers/${id}/results/3.json?limit=1`).then(safeJson),
-      fetch(`${api}/drivers/${id}/fastest/1/results.json?limit=1`).then(safeJson)
-    ]);
-
-    // Fetch season standings sequentially to avoid Jolpica API rate limits (429 Too Many Requests)
-    // which was silently failing and causing the Season History table to be empty.
+    // Fetch up to the most recent 15 season standings with caching to prevent HTTP 429 rate limit errors
     const allStandingsData = [];
-    for (const s of allSeasons) {
+    for (const s of allSeasons.slice(0, 15)) {
       if (driver.driverId !== currentDriverId) return; // stale guard
       try {
-        const res = await fetch(`${api}/${s.season}/drivers/${id}/driverStandings.json`);
-        allStandingsData.push(await safeJson(res));
+        const resData = await fetchWithCache(`${api}/${s.season}/drivers/${id}/driverStandings.json`, `drv_st_${id}_${s.season}`);
+        allStandingsData.push(resData);
       } catch (e) {
         // Continue to next season if one fails
       }
@@ -315,10 +308,20 @@ async function fetchCareerStats(driver) {
     const podiums     = wins + p2 + p3;
     const fastestLaps = parseInt(flData.MRData?.total)     || 0;
 
-    // Build Season history (already sorted most recent first)
-    const seasonsList = allStandingsData
-      .map(d => d.MRData?.StandingsTable?.StandingsLists?.[0])
-      .filter(Boolean);
+    // Build Season history (guaranteed up to 15 seasons without dropping unranked years)
+    const seasonsList = allSeasons.slice(0, 15).map((s, index) => {
+      const d = allStandingsData[index];
+      const list = d?.MRData?.StandingsTable?.StandingsLists?.[0];
+      if (list) return list;
+      return {
+        season: s.season,
+        DriverStandings: [{
+          positionText: 'NC',
+          points: '0',
+          Constructors: []
+        }]
+      };
+    });
 
     const CHAMPIONS = { 'hamilton': 7, 'max_verstappen': 4, 'alonso': 2, 'norris': 1 };
     const championships = CHAMPIONS[id] || 0;
@@ -349,7 +352,24 @@ function renderDriverModalBody(driver, totalRaces, wins, podiums, fastestLaps, c
     const sd   = s.DriverStandings[0];
     const pos  = parseInt(sd?.position || sd?.positionText);
     const posClass = pos === 1 ? 'dm-pos-1' : pos === 2 ? 'dm-pos-2' : pos === 3 ? 'dm-pos-3' : '';
-    const teamStr  = sd?.Constructors?.[0]?.name || '—';
+    const constructors = sd?.Constructors || [];
+    const HISTORICAL_TEAM_NAMES = {
+      'Racing Point': 'Aston Martin',
+      'Force India':  'Aston Martin',
+      'Toro Rosso':   'RB',
+      'AlphaTauri':   'RB',
+      'Renault':      'Alpine',
+      'Lotus F1':     'Alpine',
+      'Sauber':       'Audi',
+      'Alfa Romeo':   'Audi',
+      'Kick Sauber':  'Audi'
+    };
+    const teamStr = constructors.length > 0
+      ? constructors.map(c => {
+          const modern = HISTORICAL_TEAM_NAMES[c.name];
+          return modern ? `${c.name} <span style="font-size:11px; opacity:0.7; font-weight:400;">(${modern})</span>` : c.name;
+        }).join(' / ')
+      : '—';
     const pts      = sd?.points || '0';
     
     const isTrophy = (pos === 1 && parseInt(s.season) < 2026);

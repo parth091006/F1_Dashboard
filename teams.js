@@ -8,20 +8,29 @@ async function fetchWithCache(url, key) {
       if (Date.now() - parsed.ts < 300000) return parsed.data;
     } catch(e) {}
   }
-  const res = await fetch(url);
-  if (!res.ok) {
-    if (cached) return JSON.parse(cached).data;
-    throw new Error('HTTP ' + res.status);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      if (cached) {
+        try { return JSON.parse(cached).data; } catch(e) {}
+      }
+      return { MRData: { total: "0" } };
+    }
+    const data = await res.json();
+    try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+    return data;
+  } catch (err) {
+    if (cached) {
+      try { return JSON.parse(cached).data; } catch(e) {}
+    }
+    return { MRData: { total: "0" } };
   }
-  const data = await res.json();
-  try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
-  return data;
 }
 
 // ── Shared Utils ──
 async function safeJson(res) {
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
+  if (!res || !res.ok) return { MRData: { total: "0" } };
+  try { return await res.json(); } catch(e) { return { MRData: { total: "0" } }; }
 }
 
 // ── Styling / Colors lookup ──
@@ -422,47 +431,71 @@ async function getWikiImage(wikiUrlOrTitle, fallbackName) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackName)}&background=1d1d1d&color=fff&size=256&bold=true`;
 }
 
+const CONSTRUCTOR_LINEAGE = {
+  'mercedes':     ['mercedes'],
+  'ferrari':      ['ferrari'],
+  'mclaren':      ['mclaren'],
+  'red_bull':     ['red_bull'],
+  'williams':     ['williams'],
+  'haas':         ['haas'],
+  'aston_martin': ['aston_martin', 'racing_point', 'force_india'],
+  'alpine':       ['alpine', 'renault', 'lotus_f1'],
+  'rb':           ['rb', 'alphatauri', 'toro_rosso'],
+  'audi':         ['audi', 'sauber', 'alfa'],
+  'cadillac':     ['cadillac']
+};
+
 async function fetchCareerStats(team) {
   const id = team.constructorId;
   const teamHex = TEAM_COLORS[id] || '#8a8172';
 
   try {
-    // Fire analytical queries in parallel
-    const [totRes, p1Res, p2Res, p3Res, seasonsRes, driversRes] = await Promise.all([
-      fetch(`${api}/constructors/${id}/results.json?limit=1`),
-      fetch(`${api}/constructors/${id}/results/1.json?limit=1`),
-      fetch(`${api}/constructors/${id}/results/2.json?limit=1`),
-      fetch(`${api}/constructors/${id}/results/3.json?limit=1`),
-      fetch(`${api}/constructors/${id}/seasons.json?limit=100`),
-      fetch(`${api}/current/constructors/${id}/drivers.json`)
-    ]);
+    const lineageIds = CONSTRUCTOR_LINEAGE[id] || [id];
+    let totalRaces = 0, wins = 0, p2s = 0, p3s = 0;
+    let allSeasonsMap = new Map();
+
+    // Fire analytical queries in parallel across constructor ancestry with caching and automatic fallback
+    const lineagePromises = lineageIds.map(async (cid) => {
+      const [tData, p1Data, p2Data, p3Data, seasonsData] = await Promise.all([
+        fetchWithCache(`${api}/constructors/${cid}/results.json?limit=1`, `tm_tot_${cid}`),
+        fetchWithCache(`${api}/constructors/${cid}/results/1.json?limit=1`, `tm_p1_${cid}`),
+        fetchWithCache(`${api}/constructors/${cid}/results/2.json?limit=1`, `tm_p2_${cid}`),
+        fetchWithCache(`${api}/constructors/${cid}/results/3.json?limit=1`, `tm_p3_${cid}`),
+        fetchWithCache(`${api}/constructors/${cid}/seasons.json?limit=100`, `tm_seas_${cid}`)
+      ]);
+      totalRaces += parseInt(tData.MRData?.total || 0);
+      wins += parseInt(p1Data.MRData?.total || 0);
+      p2s += parseInt(p2Data.MRData?.total || 0);
+      p3s += parseInt(p3Data.MRData?.total || 0);
+
+      const sList = seasonsData.MRData?.SeasonTable?.Seasons || [];
+      for (const s of sList) {
+        if (!allSeasonsMap.has(s.season)) {
+          allSeasonsMap.set(s.season, cid);
+        }
+      }
+    });
+
+    const driversPromise = fetchWithCache(`${api}/current/constructors/${id}/drivers.json`, `tm_drv_${id}`);
+
+    await Promise.all([...lineagePromises, driversPromise]);
+    const driversData = await driversPromise;
 
     if (team.constructorId !== currentTeamId) return; // guard against stale modal
 
-    const tData = await safeJson(totRes);
-    const p1Data = await safeJson(p1Res);
-    const p2Data = await safeJson(p2Res);
-    const p3Data = await safeJson(p3Res);
-    const seasonsData = await safeJson(seasonsRes);
-    const driversData = await safeJson(driversRes);
-
-    const totalRaces = tData.MRData?.total || 0;
-    const wins = p1Data.MRData?.total || 0;
-    const p2s = parseInt(p2Data.MRData?.total || 0);
-    const p3s = parseInt(p3Data.MRData?.total || 0);
-    const podiums = parseInt(wins) + p2s + p3s;
+    const podiums = wins + p2s + p3s;
     const championships = CHAMPIONSHIPS[id] || 0;
 
-    const allSeasons = seasonsData.MRData?.SeasonTable?.Seasons || [];
+    const allSeasons = Array.from(allSeasonsMap.entries()).map(([season, cid]) => ({ season, cid }));
     allSeasons.sort((a, b) => parseInt(b.season) - parseInt(a.season));
 
-    // Fetch season standings sequentially to avoid Jolpica API rate limits (429 Too Many Requests)
+    // Fetch up to the most recent 15 season standings across constructor ancestry
     const allStandingsData = [];
-    for (const s of allSeasons) {
+    for (const s of allSeasons.slice(0, 15)) {
       if (team.constructorId !== currentTeamId) return; // stale guard
       try {
-        const res = await fetch(`${api}/${s.season}/constructors/${id}/constructorStandings.json`);
-        allStandingsData.push(await safeJson(res));
+        const resData = await fetchWithCache(`${api}/${s.season}/constructors/${s.cid}/constructorStandings.json`, `tm_st_${s.cid}_${s.season}`);
+        allStandingsData.push(resData);
       } catch (e) {
         // Continue to next season if one fails
       }
@@ -499,23 +532,13 @@ async function fetchCareerStats(team) {
     // Render Stats
     const bio = TEAM_BIOS[id] || `${team.name} is a Formula 1 constructor competing in the current season.`;
     
-    // Generate Personnel HTML for Hero Section
-    const principalInfo = TEAM_PRINCIPALS[id] || { name: 'Team Principal', img: '' };
-    const pName = principalInfo.name;
-
-    const [pImg, d1Img, d2Img] = await Promise.all([
-      Promise.resolve(principalInfo.img || `https://ui-avatars.com/api/?name=${encodeURIComponent(pName)}&background=1d1d1d&color=fff&size=256&bold=true`),
+    // Generate Personnel HTML for Hero Section (Drivers only, no Team Principals)
+    const [d1Img, d2Img] = await Promise.all([
       driversList[0] ? Promise.resolve(DRIVER_IMAGES[driversList[0].driverId] || await getWikiImage(driversList[0].url, `${driversList[0].givenName} ${driversList[0].familyName}`)) : Promise.resolve(''),
       driversList[1] ? Promise.resolve(DRIVER_IMAGES[driversList[1].driverId] || await getWikiImage(driversList[1].url, `${driversList[1].givenName} ${driversList[1].familyName}`)) : Promise.resolve('')
     ]);
 
-    let personnelHtml = `
-      <div class="dm-person">
-        <img class="dm-person-img dm-principal-img" src="${pImg}" alt="${pName}" />
-        <div class="dm-person-role">Principal</div>
-        <div class="dm-person-name">${pName}</div>
-      </div>
-    `;
+    let personnelHtml = '';
 
     if (driversList[0]) {
       const d = driversList[0];
@@ -550,7 +573,7 @@ async function fetchCareerStats(team) {
       html += `<div class="dm-section-label">Technical Specifications</div>`;
       html += `<div class="tm-specs-grid">`;
       for (const [key, val] of Object.entries(specs)) {
-        if (['Highest Race Finish', 'Pole Positions', 'World Championships'].includes(key)) continue;
+        if (['Highest Race Finish', 'Pole Positions', 'World Championships', 'Team Chief', 'Team Principal'].includes(key)) continue;
         html += `
           <div class="tm-spec-cell">
             <div class="tm-spec-label">${key}</div>
@@ -626,10 +649,12 @@ async function fetchCareerStats(team) {
 
       const isTrophy = (pos === 1 && parseInt(list.season) < 2026);
       const posStr = pos <= 3 ? `${isTrophy ? '🏆 ' : ''}P${pos}` : `P${pos}`;
+      const cName = cs.Constructor?.name;
+      const yearLabel = (cName && cName !== team.name) ? `${list.season} <span style="font-size:11px; opacity:0.7; font-weight:400;">(${cName})</span>` : list.season;
 
       html += `
         <tr>
-          <td class="dm-season-year">${list.season}</td>
+          <td class="dm-season-year">${yearLabel}</td>
           <td class="dm-season-pos ${pClass}">${posStr}</td>
           <td class="dm-season-pts">${cs.points}</td>
         </tr>
