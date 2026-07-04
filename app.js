@@ -82,6 +82,7 @@ async function fetchDriverStandings() {
     container.innerHTML = '';
 
     const leaderPoints = parseInt(standings[0].points);
+    const maxGap = Math.max(1, leaderPoints - parseInt(standings[standings.length - 1]?.points || 0));
 
     standings.forEach((item, index) => {
       const isLeader = index === 0;
@@ -89,19 +90,25 @@ async function fetchDriverStandings() {
       const constructorId = item.Constructors[0]?.constructorId || 'default';
       const teamColor = TEAM_COLORS[constructorId] || 'var(--ink-3)';
       const teamName = item.Constructors[0]?.name || 'Unknown';
-      const gap = isLeader ? '' : `<span class="gap">−${leaderPoints - parseInt(item.points)}</span>`;
+      const ptsDiff = leaderPoints - parseInt(item.points);
+      const gapPct = Math.min(100, Math.max(8, (ptsDiff / maxGap) * 100));
+      const gapVisual = isLeader ? '' : `
+        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
+          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamColor}; box-shadow:0 0 8px ${teamColor};"></span></span>
+          <span class="gap-text">−${ptsDiff} PTS</span>
+        </span>`;
       const favDriver = localStorage.getItem('fav_driver');
       const isFav     = item.Driver.driverId === favDriver;
 
       const rowHTML = `
-        <div class="driver-row ${isLeader ? 'leader' : ''} ${isFav ? 'is-fav' : ''}" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
+        <div class="driver-row fade-up ${constructorId} ${isLeader ? 'leader' : ''} ${isFav ? 'is-fav' : ''}" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
           <div class="driver-pos">${item.position.padStart(2, '0')}</div>
           <div class="driver-info">
             <div class="driver-line">
               <span class="driver-name">${item.Driver.givenName.charAt(0)}. ${item.Driver.familyName}</span>
               <span class="driver-code" style="background:${teamColor}; color:${isLeader || teamColor === 'var(--mercedes)' ? '#000' : '#fff'}; ">${item.Driver.code || item.Driver.familyName.substring(0, 3).toUpperCase()}</span>
             </div>
-            <div class="driver-team">${teamName} · ${item.Driver.nationality.substring(0, 3).toUpperCase()} ${gap ? '· ' + gap : ''}</div>
+            <div class="driver-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${teamName} · ${item.Driver.nationality.substring(0, 3).toUpperCase()}</span> ${gapVisual}</div>
           </div>
           <div class="driver-pts-wrap">
             <div class="driver-pts">${item.points}</div>
@@ -140,6 +147,8 @@ async function fetchConstructorStandings() {
     container.innerHTML = '';
 
     const maxPoints = parseInt(standings[0].points) || 1;
+    const conLeaderPoints = parseInt(standings[0].points) || 0;
+    const conMaxGap = Math.max(1, conLeaderPoints - parseInt(standings[standings.length - 1]?.points || 0));
 
       const favTeam = localStorage.getItem('fav_team');
 
@@ -148,23 +157,29 @@ async function fetchConstructorStandings() {
       const teamColor = TEAM_COLORS[item.Constructor.constructorId] || 'var(--ink-3)';
       const pct = (parseInt(item.points) / maxPoints) * 100;
       const isFav = item.Constructor.constructorId === favTeam;
+      const ptsDiff = conLeaderPoints - parseInt(item.points);
+      const gapPct = Math.min(100, Math.max(8, (ptsDiff / conMaxGap) * 100));
+      const gapVisual = index === 0 ? '' : `
+        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
+          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamColor}; box-shadow:0 0 8px ${teamColor};"></span></span>
+          <span class="gap-text">−${ptsDiff} PTS</span>
+        </span>`;
 
       const carImgSrc = TEAM_CARS[item.Constructor.constructorId] || '';
       const carImgHTML = carImgSrc ? `<img src="${carImgSrc}" class="dash-img dash-car-img" alt="${item.Constructor.name}">` : `<div class="dash-img-placeholder"></div>`;
 
       const rowHTML = `
-        <div class="con-row${isFav ? ' is-fav' : ''}" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
+        <div class="con-row fade-up ${item.Constructor.constructorId}${index === 0 ? ' leader' : ''}${isFav ? ' is-fav' : ''}" style="--team-color: ${teamColor}; animation-delay:${delay}s;">
           <div class="con-top">
             <div class="con-pos">${item.position.padStart(2, '0')}</div>
             <div class="con-info">
               <div class="con-name">${item.Constructor.name}</div>
-              <div class="con-engine">${item.Constructor.nationality.substring(0, 3).toUpperCase()}</div>
+              <div class="con-engine" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${item.Constructor.nationality.substring(0, 3).toUpperCase()}</span> ${gapVisual}</div>
             </div>
             ${carImgHTML}
             <div class="con-pts">${item.points}</div>
             <button class="fav-star-btn${isFav ? ' active' : ''}" data-team-id="${item.Constructor.constructorId}" title="${isFav ? 'Remove favourite' : 'Set as favourite'}">★</button>
-          </div>
-          <div class="con-bar"><div class="con-bar-fill" style="width:${pct}%; animation-delay:${delay + 1}s;"></div></div>
+          <div class="con-bar"><div class="con-bar-fill progress-bar${index === 0 ? ' leader' : ''}" style="width:${pct}%; animation-delay:${delay + 0.5}s;"></div></div>
         </div>
       `;
       container.insertAdjacentHTML('beforeend', rowHTML);
@@ -243,7 +258,7 @@ async function fetchCalendar() {
 
       const dateStr = raceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-      const icon = isPast ? '<span style="color: #229971;">✓</span>' : '🏁';
+      const icon = isPast ? '<span style="color: #00A86B;">✓</span>' : '🏁';
 
       let shortName = race.Circuit.circuitName.split(' ')[0];
       const full = race.Circuit.circuitName;
@@ -261,7 +276,7 @@ async function fetchCalendar() {
       else if (shortName === 'Circuit' || shortName === 'Autodromo' || shortName === 'Autódromo') shortName = race.Circuit.Location.locality;
 
       const rowHTML = `
-        <div class="cal-round ${statusClass}">
+        <div class="cal-round glass-card ${statusClass}" data-round-index="${index}">
           <div class="cal-rnum">${headerStr}<span class="cal-status-dot"></span></div>
           <div class="cal-flag-emoji">${icon}</div>
           <div class="cal-country">${race.Circuit.Location.country}</div>
@@ -310,6 +325,26 @@ function updateNextRaceDetails(race, totalRaces) {
 
   if (countdownInterval) clearInterval(countdownInterval);
 
+  function updateDigitWithFade(el, val) {
+    if (!el) return;
+    if (el.textContent === val) return;
+    
+    if (!el.textContent || (el.textContent === '00' && val !== '00' && !el.dataset.init)) {
+      el.textContent = val;
+      el.dataset.init = 'true';
+      return;
+    }
+    el.dataset.init = 'true';
+
+    el.classList.add('fade');
+    setTimeout(() => {
+      if (el) el.textContent = val;
+    }, 180);
+    setTimeout(() => {
+      if (el) el.classList.remove('fade');
+    }, 400);
+  }
+
   function tick() {
     const diff = target - Date.now();
     if (diff <= 0) {
@@ -319,17 +354,15 @@ function updateNextRaceDetails(race, totalRaces) {
       });
       return;
     }
-    const cd_d = document.getElementById('cd-d');
-    if (cd_d) cd_d.textContent = pad(Math.floor(diff / 86400000));
+    const dVal = pad(Math.floor(diff / 86400000));
+    const hVal = pad(Math.floor((diff % 86400000) / 3600000));
+    const mVal = pad(Math.floor((diff % 3600000) / 60000));
+    const sVal = pad(Math.floor((diff % 60000) / 1000));
 
-    const cd_h = document.getElementById('cd-h');
-    if (cd_h) cd_h.textContent = pad(Math.floor((diff % 86400000) / 3600000));
-
-    const cd_m = document.getElementById('cd-m');
-    if (cd_m) cd_m.textContent = pad(Math.floor((diff % 3600000) / 60000));
-
-    const cd_s = document.getElementById('cd-s');
-    if (cd_s) cd_s.textContent = pad(Math.floor((diff % 60000) / 1000));
+    updateDigitWithFade(document.getElementById('cd-d'), dVal);
+    updateDigitWithFade(document.getElementById('cd-h'), hVal);
+    updateDigitWithFade(document.getElementById('cd-m'), mVal);
+    updateDigitWithFade(document.getElementById('cd-s'), sVal);
   }
   tick();
   countdownInterval = setInterval(tick, 1000);
@@ -337,9 +370,7 @@ function updateNextRaceDetails(race, totalRaces) {
 
 
 
-// Set up the static ticker
 function setupTicker() {
-  // Can be made dynamic later by fetching live stats. Using placeholders for now.
   const items = Array(12).fill({ sym: "PARTH'S PIT WALL", val: 'F1 2026' });
   const mk = (it) => `<span class="tick"><span class="sym">${it.sym}</span> <span class="val">${it.val}</span></span><span class="tick tick-dot">◆</span>`;
   const half = items.map(mk).join('');
@@ -365,8 +396,8 @@ setInterval(() => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TEAM_HEX_MODAL = {
-  'mercedes': '#27F4D2', 'ferrari': '#E8002D', 'mclaren': '#FF8000',
-  'red_bull': '#3671C6', 'aston_martin': '#229971', 'alpine': '#0093CC',
+  'mercedes': '#00D2BE', 'ferrari': '#FF3B30', 'mclaren': '#FF8000',
+  'red_bull': '#3671C6', 'aston_martin': '#00A86B', 'alpine': '#0093CC',
   'rb': '#6692FF', 'haas': '#B6BABD', 'williams': '#64C4FF',
   'audi': '#00877C', 'cadillac': '#8A9099',
 };
@@ -403,12 +434,26 @@ function getTeamHex(constructorId) {
   return TEAM_HEX_MODAL[constructorId] || '#888';
 }
 
-// Event delegation: calendar strip
+// Event delegation: calendar strip — primary handler
 document.getElementById('calStrip').addEventListener('click', (e) => {
   const calRound = e.target.closest('.cal-round');
   if (!calRound) return;
-  const index = Array.from(calRound.parentNode.children).indexOf(calRound);
-  if (index >= 0 && allRaces[index]) openRaceModal(allRaces[index]);
+  const index = parseInt(calRound.dataset.roundIndex);
+  if (!isNaN(index) && allRaces[index]) {
+    openRaceModal(allRaces[index]);
+  }
+});
+
+// Fallback: document-level click handler for cal-round (in case calStrip delegation fails)
+document.addEventListener('click', (e) => {
+  const calRound = e.target.closest('.cal-round[data-round-index]');
+  if (!calRound) return;
+  // Only fire if raceModal isn't already open
+  if (document.getElementById('raceModal').classList.contains('open')) return;
+  const index = parseInt(calRound.dataset.roundIndex);
+  if (!isNaN(index) && allRaces[index]) {
+    openRaceModal(allRaces[index]);
+  }
 });
 
 // ── Modal state ──
@@ -444,15 +489,15 @@ function openRaceModal(race) {
     }
   }
 
-  // Show / hide tabs based on sprint weekend
+  // Show / hide tabs
   const sprintRounds2026 = ['2', '4', '5', '9', '12', '16'];
   const isSprint = !!race.Sprint || !!race.SprintShootout || sprintRounds2026.includes(String(race.round));
   document.querySelectorAll('.rm-tab').forEach(tab => {
     const s = tab.dataset.session;
     if (s === 'schedule' || s === 'weather') tab.classList.remove('hidden');
     else if (s === 'sprint')                 tab.classList.toggle('hidden', !isSprint);
-    else if (s === 'qualifying')             tab.classList.toggle('hidden', !isPast);
-    else if (s === 'race')                   tab.classList.toggle('hidden', !isPast);
+    else if (s === 'qualifying')             tab.classList.remove('hidden');
+    else if (s === 'race')                   tab.classList.remove('hidden');
   });
 
   // Default tab
@@ -485,8 +530,6 @@ async function loadTabContent(session) {
   const race      = currentModalRace;
   if (!race) return;
   const container = document.getElementById('rmContent');
-  const raceDate  = new Date(`${race.date}T${race.time || '00:00:00Z'}`);
-  const isPast    = raceDate < new Date();
 
   if (session === 'weather') {
     container.innerHTML = race._weatherHtml || '<div class="rm-loading"><div class="rm-loading-dot"></div><div class="rm-loading-text">Loading weather forecast</div></div>';
@@ -495,12 +538,6 @@ async function loadTabContent(session) {
 
   if (session === 'schedule') {
     renderSchedule(race, container);
-    return;
-  }
-
-  // Blank for upcoming, or practice sessions (API limitation)
-  if (!isPast) {
-    container.innerHTML = '<div class="rm-blank"></div>';
     return;
   }
 
@@ -537,74 +574,79 @@ function renderSchedule(race, container) {
   const raceDate = new Date(`${race.date}T${race.time || '14:00:00Z'}`);
   const baseTime = isNaN(raceDate) ? new Date() : raceDate;
 
-  const getSessionDate = (key, offsetHours) => {
-    if (race[key] && race[key].date) {
-      const d = new Date(`${race[key].date}T${race[key].time || '00:00:00Z'}`);
-      if (!isNaN(d)) return d;
-    }
-    return new Date(baseTime.getTime() + offsetHours * 3600 * 1000);
+  const getD = (dayOffset, hours, mins) => {
+    const d = new Date(baseTime);
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(hours, mins, 0, 0);
+    return d;
   };
 
-  let sessions = [];
-  if (isSprint) {
-    sessions = [
-      { label: 'Practice 1',      d: getSessionDate('FirstPractice', -48 - 2.5) },
-      { label: 'Sprint Shootout', d: getSessionDate('SprintShootout', -48 + 1.5) },
-      { label: 'Sprint Race',     d: getSessionDate('Sprint', -24 - 2) },
-      { label: 'Qualifying',      d: getSessionDate('Qualifying', -24) },
-      { label: 'Race',            d: baseTime, isRace: true }
-    ];
-  } else {
-    sessions = [
-      { label: 'Practice 1',      d: getSessionDate('FirstPractice', -48 - 2.5) },
-      { label: 'Practice 2',      d: getSessionDate('SecondPractice', -48 + 1) },
-      { label: 'Practice 3',      d: getSessionDate('ThirdPractice', -24 - 2.5) },
-      { label: 'Qualifying',      d: getSessionDate('Qualifying', -24) },
-      { label: 'Race',            d: baseTime, isRace: true }
-    ];
-  }
+  const schedule = isSprint ? [
+    { label: 'Practice 1',      time: getD(-2, 11, 30), type: 'prac' },
+    { label: 'Sprint Shootout', time: getD(-2, 15, 30), type: 'qual' },
+    { label: 'Sprint',          time: getD(-1, 11, 0),  type: 'race' },
+    { label: 'Qualifying',      time: getD(-1, 15, 0),  type: 'qual' },
+    { label: 'Grand Prix',      time: getD(0,  14, 0),  type: 'race' },
+  ] : [
+    { label: 'Practice 1', time: getD(-2, 11, 30), type: 'prac' },
+    { label: 'Practice 2', time: getD(-2, 15, 0),  type: 'prac' },
+    { label: 'Practice 3', time: getD(-1, 11, 30), type: 'prac' },
+    { label: 'Qualifying', time: getD(-1, 15, 0),  type: 'qual' },
+    { label: 'Grand Prix', time: getD(0,  14, 0),  type: 'race' },
+  ];
 
   let html = '<div class="rm-schedule">';
-  sessions.forEach(s => {
-    const dateStr = s.d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short', month: 'short', day: 'numeric' });
-    const timeStr = s.d.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST';
-    const cellClass = s.isRace ? 'rm-sched-cell is-race' : 'rm-sched-cell';
-    html += `<div class="${cellClass}">
-      <div class="rm-sched-label">${s.label}</div>
-      <div class="rm-sched-date">${dateStr}</div>
-      <div class="rm-sched-time">${timeStr}</div>
-    </div>`;
+  const now = new Date();
+  schedule.forEach(item => {
+    const isDone = item.time < now;
+    const isRace = item.type === 'race' && item.label === 'Grand Prix';
+    const dayStr  = item.time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = item.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    html += `
+      <div class="rm-sched-cell ${isRace ? 'is-race' : ''} ${isDone ? 'done' : ''}">
+        <div class="rm-sched-label">${item.label}</div>
+        <div class="rm-sched-date">${dayStr}</div>
+        <div class="rm-sched-time">${timeStr}</div>
+        <div class="rm-sched-status">${isDone ? '✓ Completed' : 'Up Next'}</div>
+      </div>`;
   });
   html += '</div>';
   container.innerHTML = html;
 }
 
-function formatIntervalMs(diffMs) {
-  if (diffMs < 0 || isNaN(diffMs)) return '—';
-  if (diffMs === 0) return '+0.000';
-  const totalSecs = diffMs / 1000;
-  if (totalSecs < 60) {
-    return `+${totalSecs.toFixed(3)}`;
-  }
-  const mins = Math.floor(totalSecs / 60);
-  const secs = (totalSecs % 60).toFixed(3);
-  return `+${mins}:${secs.padStart(6, '0')}`;
+function formatIntervalMs(ms) {
+  if (ms <= 0) return '0.000';
+  const sec = (ms / 1000).toFixed(3);
+  return `+${sec}`;
 }
 
-function getDriverTotalMs(res, p1TotalMs) {
-  if (res.Time?.millis && !isNaN(parseInt(res.Time.millis))) {
-    let ms = parseInt(res.Time.millis);
-    if (ms < 1000000 && p1TotalMs > 0) return p1TotalMs + ms;
-    return ms;
+function getDriverTotalMs(r, p1TotalMs) {
+  if (!r) return null;
+  if (r.Time?.millis) return parseInt(r.Time.millis);
+  if (r.Time?.time) {
+    const clean = r.Time.time.replace(/^\++/, '').trim();
+    const parts = clean.split(':');
+    if (parts.length === 2) {
+      const mins = parseInt(parts[0]);
+      const secs = parseFloat(parts[1]);
+      return Math.round((mins * 60 + secs) * 1000);
+    } else if (parts.length === 1) {
+      const secs = parseFloat(parts[0]);
+      if (!isNaN(secs)) return Math.round(secs * 1000);
+    }
   }
-  if (res.Time?.time) {
-    const clean = res.Time.time.replace(/^\++/, '').trim();
+  if (r.status?.startsWith('+')) {
+    const clean = r.status.replace(/^\++/, '').trim();
     const parts = clean.split(':');
     let ms = 0;
-    if (parts.length === 3) ms = Math.round(parseFloat(parts[0])*3600000 + parseFloat(parts[1])*60000 + parseFloat(parts[2])*1000);
-    else if (parts.length === 2) ms = Math.round(parseFloat(parts[0])*60000 + parseFloat(parts[1])*1000);
-    else if (parts.length === 1 && !isNaN(parseFloat(parts[0]))) ms = Math.round(parseFloat(parts[0])*1000);
-    else return null;
+    if (parts.length === 2) {
+      const mins = parseInt(parts[0]);
+      const secs = parseFloat(parts[1]);
+      ms = Math.round((mins * 60 + secs) * 1000);
+    } else if (parts.length === 1) {
+      const secs = parseFloat(parts[0]);
+      if (!isNaN(secs)) ms = Math.round(secs * 1000);
+    }
     if (ms < 1000000 && p1TotalMs > 0) return p1TotalMs + ms;
     return ms;
   }
@@ -612,8 +654,11 @@ function getDriverTotalMs(res, p1TotalMs) {
 }
 
 function renderRaceResults(results, container) {
+  container.scrollTop = 0;
   if (!results.length) {
-    container.innerHTML = '<div class="rm-blank"><div class="rm-blank-title">No results available</div></div>';
+    const race = currentModalRace;
+    const raceDateStr = race ? new Date(race.date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+    container.innerHTML = `<div class="rm-blank"><div class="rm-blank-title">Session Classifications Not Yet Available</div><div style="color:rgba(255,255,255,0.45);font-size:13px;margin-top:6px;">Official FIA classifications will be published after the event on ${raceDateStr}</div></div>`;
     return;
   }
   let html = `<table class="rm-results-table">
@@ -687,16 +732,16 @@ function renderRaceResults(results, container) {
 
     const timeStyle = isFl ? 'color:#df99df; font-weight:700;' : '';
 
-    html += `<tr style="animation-delay:${i * 0.06}s;">
+    html += `<tr class="${pos === 1 ? 'leader' : ''} ${isFl ? 'fastest-lap' : ''}">
       <td><div class="rm-rpos ${posClass}">${r.position}</div></td>
       <td>
         <div class="rm-rdriver">${r.Driver.givenName.charAt(0)}. ${r.Driver.familyName}</div>
         <div class="rm-rteam"><span class="rm-team-bar" style="background:${hex}"></span>${r.Constructor.name}</div>
       </td>
-      <td class="rm-rtime" style="${timeStyle}animation-delay:${0.2 + i * 0.06}s;">${leaderGapStr}</td>
-      <td class="rm-rtime" style="animation-delay:${0.3 + i * 0.06}s;">${intervalStr}</td>
+      <td class="rm-rtime" style="${timeStyle}">${leaderGapStr}</td>
+      <td class="rm-rtime">${intervalStr}</td>
       <td class="rm-rpts">${r.points}</td>
-      <td class="rm-rtime" style="color:rgba(255,255,255,0.45); animation-delay:${0.25 + i * 0.06}s;">${r.laps || '—'}</td>
+      <td class="rm-rtime" style="color:rgba(255,255,255,0.45);">${r.laps || '—'}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -704,8 +749,11 @@ function renderRaceResults(results, container) {
 }
 
 function renderQualifyingResults(results, container) {
+  container.scrollTop = 0;
   if (!results.length) {
-    container.innerHTML = '<div class="rm-blank"><div class="rm-blank-title">No qualifying data available</div></div>';
+    const race = currentModalRace;
+    const raceDateStr = race ? new Date(race.date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+    container.innerHTML = `<div class="rm-blank"><div class="rm-blank-title">Qualifying Classifications Not Yet Available</div><div style="color:rgba(255,255,255,0.45);font-size:13px;margin-top:6px;">Official FIA qualifying times will be published after the session on ${raceDateStr}</div></div>`;
     return;
   }
   let html = `<table class="rm-results-table">

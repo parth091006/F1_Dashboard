@@ -5,11 +5,11 @@
 const ANALYTICS_API = 'https://api.jolpi.ca/ergast/f1/current';
 
 const TEAM_HEX = {
-  'mercedes':     '#27F4D2',
-  'ferrari':      '#E8002D',
+  'mercedes':     '#00D2BE',
+  'ferrari':      '#FF3B30',
   'mclaren':      '#FF8000',
   'red_bull':     '#3671C6',
-  'aston_martin': '#229971',
+  'aston_martin': '#00A86B',
   'alpine':       '#0093CC',
   'rb':           '#6692FF',
   'haas':         '#B6BABD',
@@ -49,7 +49,15 @@ async function fetchAllErgast(baseUrl, key) {
     total = parseInt(data.MRData.total) || 0;
     
     const races = data.MRData.RaceTable?.Races || [];
-    allRaces = allRaces.concat(races);
+    races.forEach(r => {
+      const existing = allRaces.find(ex => ex.round === r.round && ex.season === r.season);
+      if (existing) {
+        if (r.Results) existing.Results = (existing.Results || []).concat(r.Results);
+        if (r.SprintResults) existing.SprintResults = (existing.SprintResults || []).concat(r.SprintResults);
+      } else {
+        allRaces.push(r);
+      }
+    });
     
     offset += limit;
   }
@@ -62,14 +70,14 @@ async function fetchAllErgast(baseUrl, key) {
 
 async function fetchSeasonResults() {
   if (cachedRaces) return cachedRaces;
-  cachedRaces = await fetchAllErgast(`${ANALYTICS_API}/results.json`, 'cache_analytics_races_v2');
+  cachedRaces = await fetchAllErgast(`${ANALYTICS_API}/results.json`, 'cache_analytics_races_v3');
   return cachedRaces;
 }
 
 async function fetchSeasonSprints() {
   if (cachedSprints) return cachedSprints;
   try {
-    cachedSprints = await fetchAllErgast(`${ANALYTICS_API}/sprint.json`, 'cache_analytics_sprints_v2');
+    cachedSprints = await fetchAllErgast(`${ANALYTICS_API}/sprint.json`, 'cache_analytics_sprints_v3');
     return cachedSprints;
   } catch(e) {
     return [];
@@ -298,14 +306,53 @@ function makeChartOptions(titleText) {
     maintainAspectRatio: false,
     layout:              { padding: { right: 45 } },
     animation: {
-      duration: 1400,
-      easing: 'easeInOutQuart',
-      delay: (context) => {
-        // Stagger each dataset so lines draw progressively
-        if (context.type === 'data' && context.mode === 'default') {
-          return context.datasetIndex * 120 + context.dataIndex * 30;
+      duration: 2000,
+      easing: 'easeOutQuart',
+    },
+    animations: {
+      // Draw lines progressively along the x and y axes
+      x: {
+        type: 'number',
+        easing: 'easeOutQuart',
+        duration: 2000,
+        from: NaN,
+        delay: (context) => {
+          if (context.type !== 'data' || context.mode !== 'default') return 0;
+          return context.dataIndex * 80 + context.datasetIndex * 150;
         }
-        return 0;
+      },
+      y: {
+        type: 'number',
+        easing: 'easeOutQuart',
+        duration: 2000,
+        from: (context) => {
+          return context.chart.scales.y ? context.chart.scales.y.getPixelForValue(0) : 0;
+        },
+        delay: (context) => {
+          if (context.type !== 'data' || context.mode !== 'default') return 0;
+          return context.dataIndex * 80 + context.datasetIndex * 150;
+        }
+      },
+      // Fade data points in as lines reach them
+      opacity: {
+        duration: 1500,
+        easing: 'easeOutQuart',
+        from: 0,
+        to: 1,
+        delay: (context) => {
+          if (context.type !== 'data' || context.mode !== 'default') return 0;
+          return context.dataIndex * 80 + context.datasetIndex * 150;
+        }
+      },
+      // Scale point radius dynamically
+      radius: {
+        duration: 800,
+        easing: 'easeOutBack',
+        from: 0,
+        delay: (context) => {
+          if (context.type !== 'data' || context.mode !== 'default') return 0;
+          return context.dataIndex * 80 + context.datasetIndex * 150 + 250;
+        }
       },
     },
     interaction:         { mode: 'index', intersect: false },
@@ -317,6 +364,10 @@ function makeChartOptions(titleText) {
         enabled: false,
         position: 'nearest',
         external: externalTooltipHandler,
+        animation: {
+          duration: 400,
+          easing: 'easeOutQuart',
+        },
       },
     },
     scales: {
@@ -367,7 +418,7 @@ function renderDriverChart(limit) {
   const slice    = drivers.slice(0, Math.min(limit, drivers.length));
   const labels   = rounds.map(r => `R${r}`);
   const datasets = slice.map(d => {
-    const hex = TEAM_HEX[d.teamId] || '#888';
+    const hex = TEAM_HEX[d.teamId] || '#A0A0A0';
     return {
       label:            d.code,
       data:             d.cumulative,
@@ -401,7 +452,7 @@ function renderConstructorChart() {
 
   const labels   = rounds.map(r => `R${r}`);
   const datasets = constructors.map(c => {
-    const hex = TEAM_HEX[c.teamId] || '#888';
+    const hex = TEAM_HEX[c.teamId] || '#A0A0A0';
     return {
       label:            c.name,
       data:             c.cumulative,

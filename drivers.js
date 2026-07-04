@@ -6,11 +6,11 @@ const DRIVERS_API = 'https://api.jolpi.ca/ergast/f1';
 
 // Use hex values directly — CSS variables for teams are not guaranteed in every page
 const TEAM_COLORS_DRV = {
-  'mercedes':     '#27F4D2',
-  'ferrari':      '#E8002D',
+  'mercedes':     '#00D2BE',
+  'ferrari':      '#FF3B30',
   'mclaren':      '#FF8000',
   'red_bull':     '#3671C6',
-  'aston_martin': '#229971',
+  'aston_martin': '#00A86B',
   'alpine':       '#0093CC',
   'rb':           '#6692FF',
   'haas':         '#B6BABD',
@@ -20,11 +20,11 @@ const TEAM_COLORS_DRV = {
 };
 
 const TEAM_HEX_DRV = {
-  'mercedes':     '#27F4D2',
-  'ferrari':      '#E8002D',
+  'mercedes':     '#00D2BE',
+  'ferrari':      '#FF3B30',
   'mclaren':      '#FF8000',
   'red_bull':     '#3671C6',
-  'aston_martin': '#229971',
+  'aston_martin': '#00A86B',
   'alpine':       '#0093CC',
   'rb':           '#6692FF',
   'haas':         '#B6BABD',
@@ -136,13 +136,9 @@ async function fetchAndRenderDriverGrid() {
 
     grid.innerHTML = '';
 
-    // Separate favourite from rest
+    // Sort by championship position
     const sorted = [...standings].sort((a, b) => {
-      const teamA = a.Constructors[0]?.name || '';
-      const teamB = b.Constructors[0]?.name || '';
-      // If teams are the same, sort by points or position
-      if (teamA === teamB) return parseInt(a.position) - parseInt(b.position);
-      return teamA.localeCompare(teamB);
+      return parseInt(a.position) - parseInt(b.position);
     });
 
     const favIdx = sorted.findIndex(s => s.Driver.driverId === favDriver);
@@ -151,32 +147,42 @@ async function fetchAndRenderDriverGrid() {
       sorted.unshift(favItem);
     }
 
+    const leaderPts = parseInt(sorted[0]?.points || 0);
+    const maxGapPts = Math.max(1, leaderPts - parseInt(sorted[sorted.length - 1]?.points || 0));
+
     sorted.forEach((item, index) => {
       const d         = item.Driver;
       const teamId    = item.Constructors[0]?.constructorId || '';
       const teamName  = item.Constructors[0]?.name || 'Unknown';
       const teamColor = TEAM_COLORS_DRV[teamId] || 'var(--ink-3)';
-      const teamHex   = TEAM_HEX_DRV[teamId] || '#666';
+      const teamHex   = TEAM_HEX_DRV[teamId] || '#A0A0A0';
       const isFav     = d.driverId === favDriver;
       const delay     = Math.min(index * 0.06, 1.2);
       const flag      = NATIONALITY_FLAGS[d.nationality] || '';
       const number    = d.permanentNumber || '??';
+      const ptsDiff   = leaderPts - parseInt(item.points);
+      const gapPct    = Math.min(100, Math.max(8, (ptsDiff / maxGapPts) * 100));
+      const gapVisual = index === 0 ? '' : `
+        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
+          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamHex}; box-shadow:0 0 8px ${teamHex};"></span></span>
+          <span class="gap-text">−${ptsDiff} PTS</span>
+        </span>`;
 
       const card = document.createElement('div');
-      card.className = `driver-card${isFav ? ' is-favorite' : ''}`;
+      card.className = `driver-card glass-card fade-up ${teamId}${isFav ? ' is-favorite' : ''}${index === 0 ? ' leader' : ''}`;
       card.style.cssText = `--team-color: ${teamColor}; animation-delay: ${delay}s;`;
       card.dataset.driverId = d.driverId;
 
       const driverImgUrl = DRIVER_IMAGES[d.driverId] || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.givenName + ' ' + d.familyName)}&background=1d1d1d&color=fff&size=256&bold=true`;
 
       card.innerHTML = `
-        <div class="dc-number">${number}</div>
+        <div class="dc-number ${index === 0 ? 'leader' : ''}">${number}</div>
         <img class="dc-image" src="${driverImgUrl}" alt="${d.givenName} ${d.familyName}">
         <div class="dc-code" style="background:${teamHex}">${d.code || d.familyName.substring(0,3).toUpperCase()}</div>
         <div class="dc-name">${d.givenName} ${d.familyName}</div>
-        <div class="dc-team">${flag} ${teamName}</div>
+        <div class="dc-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${flag} ${teamName}</span> ${gapVisual}</div>
         <div class="dc-footer">
-          <div class="dc-pos-pts">P${item.position}<span class="dc-pts">· ${item.points} pts</span></div>
+          <div class="dc-pos-pts ${index === 0 ? 'leader' : ''}">P${item.position}<span class="dc-pts">· ${item.points} pts</span></div>
           <button class="dc-fav-btn${isFav ? ' active' : ''}" data-driver-id="${d.driverId}" title="${isFav ? 'Remove favourite' : 'Set as favourite'}" aria-label="Toggle favourite">★</button>
         </div>
         <div class="dc-view-hint">View Profile →</div>
@@ -198,23 +204,6 @@ async function fetchAndRenderDriverGrid() {
           localStorage.setItem('fav_driver', d.driverId);
         }
         fetchAndRenderDriverGrid(); // Re-render
-      });
-
-      // 3D Tilt effect on mouse move
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        const maxTilt = 8;
-        const rotateY = ((x - centerX) / centerX) * maxTilt;
-        const rotateX = ((centerY - y) / centerY) * maxTilt;
-        card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
-      });
-
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
       });
 
       grid.appendChild(card);
@@ -406,23 +395,23 @@ function renderDriverModalBody(driver, totalRaces, wins, podiums, fastestLaps, c
 
     <div class="dm-section-label">Career Statistics</div>
     <div class="dm-stats-grid">
-      <div class="dm-stat-cell">
+      <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.1s">
         <div class="dm-stat-num">${totalRaces}</div>
         <div class="dm-stat-label">Races</div>
       </div>
-      <div class="dm-stat-cell">
+      <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.15s">
         <div class="dm-stat-num">${wins}</div>
         <div class="dm-stat-label">Wins</div>
       </div>
-      <div class="dm-stat-cell">
+      <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.2s">
         <div class="dm-stat-num">${podiums}</div>
         <div class="dm-stat-label">Podiums</div>
       </div>
-      <div class="dm-stat-cell" style="border-color: rgba(177,83,204,0.25);">
+      <div class="dm-stat-cell glass-card fade-up" style="border-color: rgba(177,83,204,0.25); animation-delay: 0.25s;">
         <div class="dm-stat-num" style="color: #df99df;">${fastestLaps}</div>
         <div class="dm-stat-label">Fastest Laps</div>
       </div>
-      <div class="dm-stat-cell" style="${championships > 0 ? 'border-color: rgba(212,160,23,0.35);' : ''}">
+      <div class="dm-stat-cell glass-card fade-up" style="${championships > 0 ? 'border-color: rgba(212,175,55,0.35); ' : ''}animation-delay: 0.3s;">
         <div class="dm-stat-num" style="${championships > 0 ? 'color: var(--gold);' : ''}">${championships}</div>
         <div class="dm-stat-label">Championships</div>
       </div>

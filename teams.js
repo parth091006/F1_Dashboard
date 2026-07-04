@@ -35,11 +35,11 @@ async function safeJson(res) {
 
 // ── Styling / Colors lookup ──
 const TEAM_COLORS = {
-  'mercedes': '#27F4D2',
-  'ferrari': '#E8002D',
+  'mercedes': '#00D2BE',
+  'ferrari': '#FF3B30',
   'mclaren': '#FF8000',
   'red_bull': '#3671C6',
-  'aston_martin': '#229971',
+  'aston_martin': '#00A86B',
   'alpine': '#0093cc',
   'haas': '#B6BABD',
   'rb': '#6692FF',
@@ -286,6 +286,8 @@ async function fetchAndRenderTeamGrid() {
     container.innerHTML = '';
 
     const maxPoints = parseInt(standings[0]?.points) || 1;
+    const leaderPts = parseInt(standings[0]?.points || 0);
+    const maxGapPts = Math.max(1, leaderPts - parseInt(standings[standings.length - 1]?.points || 0));
 
     standings.forEach((item, index) => {
       const team = item.Constructor;
@@ -293,28 +295,35 @@ async function fetchAndRenderTeamGrid() {
       const isFav = localStorage.getItem(`fav_team_${tId}`) === 'true';
       const isLeader = index === 0;
 
-      const hex = TEAM_COLORS[tId] || '#8a8172';
+      const hex = TEAM_COLORS[tId] || '#A0A0A0';
       const delay = Math.min(index * 0.08, 1.2);
       const pct = (parseInt(item.points) / maxPoints) * 100;
       const barDelay = 0.6 + index * 0.12;
+      const ptsDiff = leaderPts - parseInt(item.points);
+      const gapPct = Math.min(100, Math.max(8, (ptsDiff / maxGapPts) * 100));
+      const gapVisual = isLeader ? '' : `
+        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
+          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${hex}; box-shadow:0 0 8px ${hex};"></span></span>
+          <span class="gap-text">−${ptsDiff} PTS</span>
+        </span>`;
       
       const card = document.createElement('div');
-      card.className = `team-card ${isFav ? 'is-favorite' : ''}`;
+      card.className = `team-card glass-card fade-up ${tId} ${isFav ? 'is-favorite' : ''} ${isLeader ? 'leader' : ''}`;
       card.style.cssText = `--team-color: ${hex}; animation-delay: ${delay}s;`;
 
       const carImg = TEAM_CARS[tId];
       const carHtml = carImg ? `<div class="dc-car-wrap"><img src="${carImg}" class="dc-car-img" alt="${team.name} F1 Car"></div>` : '';
 
       card.innerHTML = `
-        <div class="dc-number">P${item.position}</div>
+        <div class="dc-number ${isLeader ? 'leader' : ''}">P${item.position}</div>
         <div class="dc-name">${team.name}</div>
-        <div class="dc-team">${team.nationality}</div>
+        <div class="dc-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${team.nationality}</span> ${gapVisual}</div>
         ${carHtml}
         <div class="dc-footer">
-          <div class="dc-pos-pts">${item.points} <span class="dc-pts">PTS</span></div>
+          <div class="dc-pos-pts ${isLeader ? 'leader' : ''}">${item.points} <span class="dc-pts">PTS</span></div>
           <button class="dc-fav-btn ${isFav ? 'active' : ''}" data-id="${tId}" aria-label="Toggle favorite">★</button>
         </div>
-        <div class="tc-bar"><div class="tc-bar-fill${isLeader ? ' leader' : ''}" style="width:${pct}%; animation-delay:${barDelay}s;"></div></div>
+        <div class="tc-bar"><div class="tc-bar-fill progress-bar${isLeader ? ' leader' : ''}" style="width:${pct}%; animation-delay:${barDelay}s;"></div></div>
         <div class="dc-view-hint">View Profile</div>
       `;
 
@@ -368,7 +377,7 @@ async function fetchAndRenderTeamGrid() {
 function openTeamModal(team, standingItem) {
   const id = team.constructorId;
   currentTeamId = id;
-  const teamHex = TEAM_COLORS[id] || '#8a8172';
+  const teamHex = TEAM_COLORS[id] || '#A0A0A0';
   const flag = NATIONALITY_FLAGS[team.nationality] || '🌐';
 
   // Hero
@@ -470,7 +479,7 @@ const CONSTRUCTOR_LINEAGE = {
 
 async function fetchCareerStats(team) {
   const id = team.constructorId;
-  const teamHex = TEAM_COLORS[id] || '#8a8172';
+  const teamHex = TEAM_COLORS[id] || '#A0A0A0';
 
   try {
     const lineageIds = CONSTRUCTOR_LINEAGE[id] || [id];
@@ -610,33 +619,33 @@ async function fetchCareerStats(team) {
     html += `
       <div class="dm-section-label">All-Time Statistics</div>
       <div class="dm-stats-grid">
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.1s">
           <div class="dm-stat-num">${totalRaces}</div>
           <div class="dm-stat-label">Grands Prix</div>
         </div>
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.15s">
           <div class="dm-stat-num">${championships}</div>
           <div class="dm-stat-label">World Titles</div>
         </div>
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.2s">
           <div class="dm-stat-num">${wins}</div>
           <div class="dm-stat-label">Race Wins</div>
         </div>
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.25s">
           <div class="dm-stat-num">${podiums}</div>
           <div class="dm-stat-label">Podiums</div>
         </div>
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.3s">
           <div class="dm-stat-num">${allSeasons.length}</div>
           <div class="dm-stat-label">Seasons</div>
         </div>
         ${specs['Pole Positions'] ? `
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.35s">
           <div class="dm-stat-num" style="font-size:22px">${specs['Pole Positions']}</div>
           <div class="dm-stat-label">Pole Positions</div>
         </div>` : ''}
         ${specs['Highest Race Finish'] ? `
-        <div class="dm-stat-cell">
+        <div class="dm-stat-cell glass-card fade-up" style="animation-delay: 0.4s">
           <div class="dm-stat-num" style="font-size:16px">${specs['Highest Race Finish']}</div>
           <div class="dm-stat-label">Best Finish</div>
         </div>` : ''}

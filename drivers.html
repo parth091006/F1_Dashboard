@@ -25,19 +25,69 @@
     }
 
     :root {
-      --carbon: #0a0a0a;
-      --carbon-2: #131313;
-      --carbon-3: #1d1d1d;
-      --paper: #f2ece0;
-      --paper-2: #e8e1d2;
-      --paper-3: #d8d0bf;
-      --ink: #0a0a0a;
-      --ink-2: #4a4438;
-      --ink-3: #8a8172;
-      --racing: #e10600;
-      --racing-hot: #ff2010;
-      --gold: #d4a017;
-      --rule-light: #d4cec4;
+      /* Matte Carbon Backgrounds */
+      --carbon: #0A0A0A;
+      --carbon-2: #121212;
+      --carbon-3: rgba(255, 255, 255, 0.03);
+      --paper: #0A0A0A;
+      --paper-2: #121212;
+      --paper-3: rgba(255, 255, 255, 0.03);
+      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+
+      /* Text Colors */
+      --ink: #F5F5F5;
+      --ink-2: #A0A0A0;
+      --ink-3: #707070;
+
+      /* Accents */
+      --racing: #FF3B30;
+      --racing-hot: #FF5B50;
+      --racing-deep: #b30400;
+      --gold: #D4AF37;
+
+      /* Telemetry Team Accents */
+      --mercedes: #00D2BE;
+      --ferrari: #FF3B30;
+      --mclaren: #FF8000;
+      --redbull: #3671C6;
+      --williams: #64C4FF;
+      --haas: #B6BABD;
+      --alpine: #0093CC;
+      --audi: #00877C;
+      --racingbulls: #6692FF;
+      --aston: #00A86B;
+      --cadillac: #8A9099;
+
+      /* Rules & Dividers */
+      --rule-light: rgba(255, 255, 255, 0.08);
+      --rule-dark: rgba(255, 255, 255, 0.14);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 25px rgba(212, 175, 55, 0.15);
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes ticker {
@@ -64,14 +114,33 @@
 
     html { scroll-behavior: smooth; }
 
-    /* ── Page Transitions ── */
+    /* ── Step 13: GSAP & View Transitions Smooth Navigation ── */
+    @view-transition {
+      navigation: auto;
+    }
     @keyframes pageEnter {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      0% {
+        opacity: 0;
+        transform: translateY(32px) scale(0.985);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+      }
     }
     @keyframes pageExit {
-      from { opacity: 1; transform: none; }
-      to   { opacity: 0; transform: translateY(-8px); }
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-32px) scale(0.985);
+        filter: blur(4px);
+      }
     }
 
     body {
@@ -81,14 +150,33 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
-      animation: pageEnter 0.5s cubic-bezier(.2,.8,.2,1) both;
+      animation: pageEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     body.page-exiting {
-      animation: pageExit 0.28s cubic-bezier(.4,0,1,1) both;
+      animation: pageExit 0.38s cubic-bezier(0.4, 0, 1, 1) both !important;
     }
 
     /* ── Animated Telemetry Background ── */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+      animation: moveGrid 20s linear infinite;
+    }
+
+    @keyframes moveGrid {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+
     .telemetry-bg {
       position: fixed;
       inset: 0;
@@ -100,25 +188,30 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(225, 6, 0, 0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(225, 6, 0, 0.025) 1px, transparent 1px);
-      background-size: 60px 60px;
+        linear-gradient(rgba(0, 210, 190, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 210, 190, 0.03) 1px, transparent 1px);
+      background-size: 160px 160px;
+      animation: moveGridMajor 36s linear infinite;
+    }
+    @keyframes moveGridMajor {
+      0% { background-position: 0 0; }
+      100% { background-position: 160px 160px; }
     }
     @keyframes scanLine {
-      0%   { transform: translateY(-120px); }
+      0%   { transform: translateY(-150px); }
       100% { transform: translateY(100vh); }
     }
     .telemetry-scan {
       position: absolute;
       left: 0; right: 0;
-      height: 120px;
-      background: linear-gradient(180deg, transparent 0%, rgba(225, 6, 0, 0.035) 50%, transparent 100%);
+      height: 140px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 210, 190, 0.05) 50%, transparent 100%);
       animation: scanLine 8s linear infinite;
     }
     .telemetry-scan-2 {
       animation-delay: 4s;
-      height: 80px;
-      background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 23, 0.02) 50%, transparent 100%);
+      height: 100px;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 175, 55, 0.05) 50%, transparent 100%);
       animation-duration: 12s;
     }
 
@@ -183,20 +276,20 @@
       height: 100%;
     }
     .nav-link::after {
-      content: '';
+      content: "";
       position: absolute;
+      left: 0;
       bottom: 0;
-      left: 18px; right: 18px;
+      width: 0;
       height: 2px;
-      background: var(--racing);
-      transform: scaleX(0);
-      transform-origin: center;
-      transition: transform 0.25s ease;
+      background: var(--gold, #D4AF37);
+      box-shadow: 0 0 8px var(--gold, #D4AF37);
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .nav-link:hover { color: rgba(255,255,255,0.85); }
-    .nav-link:hover::after { transform: scaleX(0.5); }
-    .nav-link.active { color: #fff; }
-    .nav-link.active::after { transform: scaleX(1); }
+    .nav-link:hover { color: rgba(255,255,255,0.9); }
+    .nav-link:hover::after { width: 100%; }
+    .nav-link.active { color: var(--gold, #D4AF37); text-shadow: 0 0 12px rgba(212, 175, 55, 0.4); }
+    .nav-link.active::after { width: 100%; background: var(--gold, #D4AF37); box-shadow: 0 0 10px var(--gold, #D4AF37); }
 
     /* ── TICKER ── */
     .ticker-wrap {
@@ -217,8 +310,46 @@
       z-index: 2;
       pointer-events: none;
     }
-    .ticker-wrap::before { left: 0; background: linear-gradient(90deg, var(--carbon), transparent); }
+    .ticker-wrap::before { left: 85px; background: linear-gradient(90deg, var(--carbon), transparent); }
     .ticker-wrap::after  { right: 0; background: linear-gradient(270deg, var(--carbon), transparent); }
+
+    .ticker-live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 59, 48, 0.15);
+      border: 1px solid rgba(255, 59, 48, 0.4);
+      border-radius: 6px;
+      padding: 4px 10px;
+      margin-left: 16px;
+      margin-right: 16px;
+      z-index: 10;
+      flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(255, 59, 48, 0.3);
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #FF3B30;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #FF3B30;
+      animation: pulse 1s infinite;
+    }
+
+    .live-badge-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.12em;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
     .ticker-track {
       display: flex;
       white-space: nowrap;
@@ -284,7 +415,7 @@
       letter-spacing: .16em;
       text-transform: uppercase;
       color: var(--ink-3);
-      border-top: 1px solid var(--ink);
+      border-top: 1px solid var(--rule-light);
       padding-top: 18px;
       display: flex;
       justify-content: space-between;
@@ -310,28 +441,31 @@
       perspective: 1200px;
     }
 
-    /* ── DRIVER CARD ── */
+    /* ── DRIVER CARD (Hero Style) ── */
     .driver-card {
-      background: var(--paper);
+      background: linear-gradient(145deg, var(--card-bg, rgba(255, 255, 255, 0.03)), color-mix(in srgb, var(--team-color, transparent) 8%, rgba(255, 255, 255, 0.01)));
       border: 1px solid var(--rule-light);
       border-top: 3px solid var(--team-color, var(--ink-3));
-      padding: 22px 20px 16px;
+      padding: 24px 22px 18px;
       cursor: pointer;
       position: relative;
       overflow: hidden;
       transform-style: preserve-3d;
-      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s, border-color 0.35s;
+      transition: transform 0.4s cubic-bezier(.16,1,.3,1), box-shadow 0.4s cubic-bezier(.16,1,.3,1), border-color 0.4s ease, background 0.4s ease;
       opacity: 0;
       animation: cardReveal 0.5s cubic-bezier(.25,.9,.3,1) both;
       will-change: transform;
     }
+    /* Glowing Border Accent */
     .driver-card::before {
       content: '';
       position: absolute;
       inset: -1px;
       border: 2px solid var(--team-color, transparent);
+      box-shadow: 0 0 22px var(--team-color, transparent), inset 0 0 15px color-mix(in srgb, var(--team-color, #000) 30%, transparent);
+      border-radius: inherit;
       opacity: 0;
-      transition: opacity 0.35s ease;
+      transition: opacity 0.35s cubic-bezier(.16,1,.3,1), box-shadow 0.35s ease;
       pointer-events: none;
       z-index: 2;
     }
@@ -339,10 +473,12 @@
       opacity: 1;
     }
     .driver-card:hover {
+      transform: rotateX(4deg) rotateY(-4deg);
       box-shadow:
-        0 10px 40px rgba(0,0,0,0.13),
-        0 0 24px color-mix(in srgb, var(--team-color, #888) 30%, transparent);
-      border-color: var(--team-color, var(--ink));
+        0 16px 48px rgba(0,0,0,0.45),
+        0 0 32px color-mix(in srgb, var(--team-color, #888) 45%, transparent);
+      border-color: var(--team-color, var(--rule-light));
+      background: linear-gradient(145deg, var(--card-bg, rgba(255, 255, 255, 0.05)), color-mix(in srgb, var(--team-color, transparent) 16%, rgba(255, 255, 255, 0.02)));
     }
     .driver-card.is-favorite {
       border-color: var(--gold);
@@ -370,31 +506,33 @@
       opacity: 1;
       pointer-events: none;
       filter: drop-shadow(-5px 5px 15px rgba(0,0,0,0.25));
-      transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+      transition: transform 0.4s cubic-bezier(.16,1,.3,1);
     }
     .driver-card:hover .dc-image {
-      transform: scale(1.05) translateX(-5px);
+      transform: scale(1.06) translateX(-5px) translateZ(20px);
     }
 
-    /* Big driver number */
+    /* Big driver number (Hero style) */
     .dc-number {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 54px;
-      font-weight: 700;
+      font-size: 64px;
+      font-weight: 800;
       color: var(--team-color, var(--ink-3));
-      line-height: 1;
-      letter-spacing: -0.04em;
+      line-height: 0.9;
+      letter-spacing: -0.05em;
       font-variant-numeric: tabular-nums;
-      margin-bottom: 6px;
-      opacity: 0.9;
+      margin-bottom: 8px;
+      opacity: 0.85;
       position: relative;
       z-index: 1;
-      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), opacity 0.35s, filter 0.35s;
+      text-shadow: 0 4px 15px color-mix(in srgb, var(--team-color, #000) 25%, transparent);
+      transition: transform 0.4s cubic-bezier(.16,1,.3,1), opacity 0.35s, text-shadow 0.35s, filter 0.35s;
     }
     .driver-card:hover .dc-number {
-      transform: translateY(-4px) scale(1.06);
+      transform: translateY(-6px) scale(1.08) translateZ(15px);
       opacity: 1;
-      filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--team-color, #888) 40%, transparent));
+      text-shadow: 0 6px 22px color-mix(in srgb, var(--team-color, #000) 50%, transparent);
+      filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--team-color, #888) 50%, transparent));
     }
 
     /* 3-letter code badge */
@@ -737,7 +875,7 @@
       padding: 32px 36px 40px;
     }
     .footer {
-      border-top: 1px solid var(--ink);
+      border-top: 1px solid var(--rule-light);
       padding-top: 22px;
       display: flex;
       justify-content: space-between;
@@ -785,6 +923,193 @@
       .dm-stats-grid { grid-template-columns: repeat(2, 1fr); }
       .nav-link { padding: 0 12px; font-size: 9px; }
     }
+    /* ── Telemetry Glow Effects (Step 7) ── */
+    .driver-row.leader .driver-pos,
+    .con-row.leader .con-pos,
+    .driver-row.leader .driver-pts,
+    .con-row.leader .con-pts,
+    .driver-card.leader .dc-number,
+    .driver-card.leader .dc-pos-pts,
+    .team-card.leader .dc-number,
+    .team-card.leader .dc-pos-pts,
+    .dm-stat-num.leader,
+    .tc-bar-fill.leader,
+    .rm-rpos.p1,
+    .pod-row.p1 .pod-badge,
+    .pod-row.p1 .pod-name {
+      color: #D4AF37 !important;
+      text-shadow: 0 0 12px rgba(212, 175, 55, 0.8), 0 0 24px rgba(212, 175, 55, 0.4) !important;
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+
+    .fastest-lap,
+    .fastest-lap *,
+    .dm-stat-num.fastest-lap {
+      color: #df99df !important;
+      text-shadow: 0 0 12px rgba(223, 153, 223, 0.8), 0 0 25px rgba(223, 153, 223, 0.4) !important;
+    }
+
+    @keyframes telemetryPulseGlow {
+      0% { text-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3); }
+      50% { text-shadow: 0 0 18px rgba(212, 175, 55, 0.95), 0 0 35px rgba(212, 175, 55, 0.6); }
+      100% { text-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3); }
+    }
+
+    .driver-row.leader .driver-pos,
+    .con-row.leader .con-pos,
+    .rm-rpos.p1 {
+      animation: telemetryPulseGlow 2.5s infinite ease-in-out;
+    }
+
+    /* ── Team Accent Borders & Glows (Step 10) ── */
+    .ferrari {
+      border-left: 4px solid #FF2800 !important;
+      box-shadow: -4px 0 16px -2px rgba(255, 40, 0, 0.5) !important;
+    }
+    .mercedes {
+      border-left: 4px solid #00D2BE !important;
+      box-shadow: -4px 0 16px -2px rgba(0, 210, 190, 0.5) !important;
+    }
+    .mclaren {
+      border-left: 4px solid #FF8000 !important;
+      box-shadow: -4px 0 16px -2px rgba(255, 128, 0, 0.5) !important;
+    }
+    .red_bull, .red-bull {
+      border-left: 4px solid #3671C6 !important;
+      box-shadow: -4px 0 16px -2px rgba(54, 113, 198, 0.5) !important;
+    }
+    .aston_martin, .aston-martin {
+      border-left: 4px solid #00A86B !important;
+      box-shadow: -4px 0 16px -2px rgba(0, 168, 107, 0.5) !important;
+    }
+    .alpine {
+      border-left: 4px solid #0093cc !important;
+      box-shadow: -4px 0 16px -2px rgba(0, 147, 204, 0.5) !important;
+    }
+    .williams {
+      border-left: 4px solid #64C4FF !important;
+      box-shadow: -4px 0 16px -2px rgba(100, 196, 255, 0.5) !important;
+    }
+    .rb, .racing_bulls {
+      border-left: 4px solid #6692FF !important;
+      box-shadow: -4px 0 16px -2px rgba(102, 146, 255, 0.5) !important;
+    }
+    .haas {
+      border-left: 4px solid #B6BABD !important;
+      box-shadow: -4px 0 16px -2px rgba(182, 186, 189, 0.5) !important;
+    }
+    .audi, .sauber {
+      border-left: 4px solid #F50537 !important;
+      box-shadow: -4px 0 16px -2px rgba(245, 5, 55, 0.5) !important;
+    }
+    .cadillac {
+      border-left: 4px solid #FFB800 !important;
+      box-shadow: -4px 0 16px -2px rgba(255, 184, 0, 0.5) !important;
+    }
+
+    /* ── Phase 6 Step 11: Animated Progress Bars & Leader Pulse ── */
+    .progress-bar,
+    .con-bar-fill,
+    .tc-bar-fill {
+      transition: width 1.5s ease, box-shadow 0.6s ease, filter 0.6s ease !important;
+      animation: progressGrowGlow 1.8s cubic-bezier(.2,.8,.2,1) forwards !important;
+      box-shadow: 0 0 14px var(--team-color, rgba(255,255,255,0.5));
+    }
+
+    @keyframes progressGrowGlow {
+      0% {
+        transform: scaleX(0);
+        opacity: 0.4;
+        box-shadow: 0 0 25px var(--team-color, #fff), 0 0 45px var(--team-color, #fff);
+        filter: brightness(1.6);
+      }
+      60% {
+        box-shadow: 0 0 18px var(--team-color, #fff), 0 0 35px var(--team-color, #fff);
+        filter: brightness(1.3);
+      }
+      100% {
+        transform: scaleX(1);
+        opacity: 1;
+        box-shadow: 0 0 8px var(--team-color, transparent);
+        filter: brightness(1);
+      }
+    }
+
+    /* Pulse for leaders */
+    .progress-bar.leader,
+    .con-bar-fill.leader,
+    .tc-bar-fill.leader {
+      background: linear-gradient(90deg, var(--team-color, var(--gold)), var(--gold)) !important;
+      animation: progressGrowGlow 1.8s cubic-bezier(.2,.8,.2,1) forwards, leaderBarPulse 2s infinite ease-in-out 1.8s !important;
+    }
+
+    @keyframes leaderBarPulse {
+      0%, 100% {
+        box-shadow: 0 0 10px var(--gold, #D4AF37), 0 0 20px var(--team-color, #D4AF37);
+        filter: brightness(1);
+      }
+      50% {
+        box-shadow: 0 0 22px var(--gold, #D4AF37), 0 0 42px var(--gold, #D4AF37), 0 0 65px var(--team-color, #D4AF37);
+        filter: brightness(1.4);
+      }
+    }
+
+    /* ── Step 12: F1 Broadcast Timing Tower Gap Visualization ── */
+    .gap-visual {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 10, 12, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0,0,0,0.3);
+      white-space: nowrap;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .gap-visual:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .gap-visual.leader-pill {
+      background: linear-gradient(90deg, rgba(212, 175, 55, 0.25), rgba(10, 10, 12, 0.85));
+      border-color: rgba(212, 175, 55, 0.5);
+      color: var(--gold, #D4AF37);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 12px rgba(212, 175, 55, 0.35);
+    }
+    .gap-visual .gap-indicator {
+      width: 4px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--gold, #D4AF37);
+      box-shadow: 0 0 8px var(--gold, #D4AF37);
+      animation: telemetryPulseGlow 2s infinite ease-in-out;
+    }
+    .gap-visual .gap-bar-track {
+      width: 44px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .gap-visual .gap-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1.2s cubic-bezier(.2,.8,.2,1);
+    }
+    .gap-visual .gap-text {
+      color: #fff;
+    }
+    .gap-visual.leader-pill .gap-text {
+      color: var(--gold, #D4AF37);
+      text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+    }
   </style>
 </head>
 
@@ -807,12 +1132,12 @@
   </nav>
 
   <!-- Ticker -->
-  <div class="ticker-wrap" role="marquee" aria-label="Live ticker">
+  <div class="ticker-wrap">
     <div class="ticker-track" id="tkTrack"></div>
   </div>
 
   <!-- Hero -->
-  <section class="drivers-hero">
+  <section class="drivers-hero fade-up" style="animation-delay: 0.1s">
     <div class="drivers-eyebrow">2026 Driver Grid</div>
     <h1 class="drivers-title">Driver <em>Profiles</em></h1>
     <div class="drivers-desc">
@@ -822,7 +1147,7 @@
   </section>
 
   <!-- Driver Grid -->
-  <div class="drivers-grid-wrap">
+  <div class="drivers-grid-wrap fade-up" style="animation-delay: 0.2s">
     <div class="drivers-grid" id="driversGrid">
       <div class="grid-loading">· Loading driver grid ·</div>
     </div>
