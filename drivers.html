@@ -25,19 +25,19 @@
     }
 
     :root {
-      /* Matte Carbon Backgrounds */
-      --carbon: #0A0A0A;
-      --carbon-2: #121212;
-      --carbon-3: rgba(255, 255, 255, 0.03);
-      --paper: #0A0A0A;
-      --paper-2: #121212;
-      --paper-3: rgba(255, 255, 255, 0.03);
-      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+      /* Bright Track Backgrounds */
+      --carbon: #F4EEE4;
+      --carbon-2: #E7DFD1;
+      --carbon-3: rgba(17, 17, 19, 0.05);
+      --paper: #FBF8F2;
+      --paper-2: #F1EBE0;
+      --paper-3: rgba(17, 17, 19, 0.04);
+      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 240, 228, 0.92) 100%);
 
       /* Text Colors */
-      --ink: #F5F5F5;
-      --ink-2: #A0A0A0;
-      --ink-3: #707070;
+      --ink: #101114;
+      --ink-2: #5E5A56;
+      --ink-3: #8D857B;
 
       /* Accents */
       --racing: #FF3B30;
@@ -59,14 +59,14 @@
       --cadillac: #8A9099;
 
       /* Rules & Dividers */
-      --rule-light: rgba(255, 255, 255, 0.08);
-      --rule-dark: rgba(255, 255, 255, 0.14);
+      --rule-light: rgba(17, 17, 19, 0.09);
+      --rule-dark: rgba(17, 17, 19, 0.14);
     }
 
     .glass-card {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(17, 17, 19, 0.08);
       border-radius: 18px;
       transition: all 0.3s ease;
     }
@@ -1109,6 +1109,70 @@
     .gap-visual.leader-pill .gap-text {
       color: var(--gold, #D4AF37);
       text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+    }
+    .drivers-hero,
+    .drivers-hero *,
+    .drivers-grid-wrap,
+    .drivers-grid-wrap *,
+    .ticker-wrap,
+    .ticker-wrap * {
+      color: var(--ink) !important;
+    }
+    .drivers-title em,
+    .tick .sym,
+    .dc-view-hint,
+    .dm-eyebrow,
+    .dm-meta-dot {
+      color: var(--racing) !important;
+    }
+    .tick,
+    .tick .val,
+    .tick-dot,
+    .drivers-desc,
+    .drivers-count,
+    .nav-link,
+    .nav-brand-text {
+      color: var(--ink-2) !important;
+    }
+    .driver-card,
+    .driver-card *,
+    .team-card,
+    .team-card * {
+      color: var(--ink) !important;
+    }
+    .dc-code,
+    .dc-view-hint,
+    .dm-close-btn,
+    .dm-person-name,
+    .dm-person-role,
+    .dm-name,
+    .dm-meta,
+    .dm-bio,
+    .dm-section-label,
+    .dm-stat-num,
+    .dm-stat-label,
+    .dm-history-table th,
+    .dm-history-table td,
+    .dm-season-year,
+    .dm-season-team,
+    .dm-season-pts,
+    .tm-spec-label,
+    .tm-spec-val {
+      color: var(--ink) !important;
+    }
+    .driver-modal-overlay,
+    .team-modal-overlay {
+      background: rgba(17, 17, 19, 0.34) !important;
+    }
+    .dc-code,
+    .dc-view-hint {
+      color: #fff !important;
+    }
+    .dm-pos-1,
+    .dm-pos-2,
+    .dm-pos-3,
+    .tm-spec-val strong {
+      color: var(--gold) !important;
     }
   </style>
 </head>

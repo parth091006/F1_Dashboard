@@ -372,30 +372,30 @@ function makeChartOptions(titleText) {
     },
     scales: {
       x: {
-        grid:  { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        grid:  { color: 'rgba(17,17,19,0.08)', drawBorder: false },
         ticks: {
-          color: 'rgba(255,255,255,0.35)',
+          color: 'rgba(17,17,19,0.72)',
           font:  { family: "'JetBrains Mono', monospace", size: 10 },
           maxRotation: 0,
         },
         title: {
           display: true,
           text:    'Round',
-          color:   'rgba(255,255,255,0.25)',
+          color:   'rgba(17,17,19,0.54)',
           font:    { family: "'JetBrains Mono', monospace", size: 9 },
           padding: { top: 8 },
         },
       },
       y: {
-        grid:  { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        grid:  { color: 'rgba(17,17,19,0.08)', drawBorder: false },
         ticks: {
-          color: 'rgba(255,255,255,0.35)',
+          color: 'rgba(17,17,19,0.72)',
           font:  { family: "'JetBrains Mono', monospace", size: 10 },
         },
         title: {
           display: true,
           text:    'Points',
-          color:   'rgba(255,255,255,0.25)',
+          color:   'rgba(17,17,19,0.54)',
           font:    { family: "'JetBrains Mono', monospace", size: 9 },
           padding: { bottom: 8 },
         },

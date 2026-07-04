@@ -464,6 +464,7 @@ function openRaceModal(race) {
   currentModalRace = race;
   const raceDate   = new Date(`${race.date}T${race.time || '00:00:00Z'}`);
   const isPast     = raceDate < new Date();
+  const raceModal  = document.getElementById('raceModal');
 
   // Header
   document.getElementById('rm-round').textContent =
@@ -506,7 +507,10 @@ function openRaceModal(race) {
   loadTabContent(defaultTab);
 
   // Open
-  document.getElementById('raceModal').classList.add('open');
+  if (raceModal) {
+    raceModal.style.top = `${window.scrollY || window.pageYOffset || 0}px`;
+    raceModal.classList.add('open');
+  }
   document.body.style.overflow = 'hidden';
 
   // Fetch weather in background
@@ -514,7 +518,11 @@ function openRaceModal(race) {
 }
 
 function closeRaceModal() {
-  document.getElementById('raceModal').classList.remove('open');
+  const raceModal = document.getElementById('raceModal');
+  if (raceModal) {
+    raceModal.classList.remove('open');
+    raceModal.style.top = '';
+  }
   document.body.style.overflow = '';
   currentModalRace = null;
 }

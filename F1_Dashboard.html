@@ -29,19 +29,19 @@
     }
 
     :root {
-      /* Matte Carbon Backgrounds */
-      --carbon: #0A0A0A;
-      --carbon-2: #121212;
-      --carbon-3: rgba(255, 255, 255, 0.03);
-      --paper: #0A0A0A;
-      --paper-2: #121212;
-      --paper-3: rgba(255, 255, 255, 0.03);
-      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+      /* Bright Track Backgrounds */
+      --carbon: #F4EEE4;
+      --carbon-2: #E7DFD1;
+      --carbon-3: rgba(17, 17, 19, 0.05);
+      --paper: #FBF8F2;
+      --paper-2: #F1EBE0;
+      --paper-3: rgba(17, 17, 19, 0.04);
+      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 240, 228, 0.92) 100%);
 
       /* Text Colors */
-      --ink: #F5F5F5;
-      --ink-2: #A0A0A0;
-      --ink-3: #707070;
+      --ink: #101114;
+      --ink-2: #5E5A56;
+      --ink-3: #8D857B;
 
       /* Accents */
       --racing: #FF3B30;
@@ -63,14 +63,14 @@
       --cadillac: #8A9099;
 
       /* Rules & Dividers */
-      --rule-light: rgba(255, 255, 255, 0.08);
-      --rule-dark: rgba(255, 255, 255, 0.14);
+      --rule-light: rgba(17, 17, 19, 0.09);
+      --rule-dark: rgba(17, 17, 19, 0.14);
     }
 
     .glass-card {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(17, 17, 19, 0.08);
       border-radius: 18px;
       transition: all 0.3s ease;
     }
@@ -2003,7 +2003,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: var(--ink);
+      background: var(--racing);
       color: rgba(255,255,255,0.8);
       font-family: 'JetBrains Mono', monospace;
       font-size: 8px;
@@ -2016,7 +2016,6 @@
       transition: transform 0.2s ease;
       z-index: 2;
     }
-    .cal-round.next::after { background: var(--racing); }
     .cal-round:hover::after { transform: translateY(0); }
 
     /* Dashboard Images */
@@ -2677,6 +2676,96 @@
     .gap-visual.leader-pill .gap-text {
       color: var(--gold, #D4AF37);
       text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+    }
+    .race-block,
+    .race-block *,
+    .ticker-wrap,
+    .ticker-wrap *,
+    .cal-section,
+    .cal-section *,
+    .footer-wrap,
+    .footer-wrap * {
+      color: var(--ink) !important;
+    }
+    .race-round,
+    .cal-round::after,
+    .ticker-live-badge,
+    .ticker-live-badge * {
+      color: #fff !important;
+    }
+    .race-name em,
+    .cal-title em,
+    .f-brand em,
+    .rm-title em {
+      color: var(--racing) !important;
+    }
+    .race-name,
+    .race-circuit strong,
+    .race-stat-val,
+    .cd-num,
+    .rm-title,
+    .rm-circuit,
+    .rm-circuit strong,
+    .rm-tab,
+    .rm-loading-text,
+    .rm-sched-label,
+    .rm-sched-time,
+    .rm-sched-status,
+    .rm-rpos,
+    .rm-rteam,
+    .rm-rtime,
+    .rm-weather-label,
+    .rm-weather-day,
+    .rm-weather-desc,
+    .rm-weather-note,
+    .rm-blank-title,
+    .rm-blank,
+    .rm-weather-grid,
+    .rm-weather-panel {
+      color: var(--ink) !important;
+    }
+    .race-circuit,
+    .race-stat-label,
+    .cd-label,
+    .cal-country,
+    .cal-date,
+    .cal-meta,
+    .f-note,
+    .f-brand,
+    .tick,
+    .tick .val,
+    .tick-dot,
+    .live-badge-text,
+    .countdown-label,
+    .rm-round,
+    .rm-circuit-info,
+    .rm-tab:hover,
+    .rm-tab.active,
+    .rm-weather-day-sub,
+    .rm-weather-time,
+    .rm-sched-cell,
+    .rm-sched-status {
+      color: var(--ink-2) !important;
+    }
+    .cd-cell,
+    .cal-round,
+    .rm-content,
+    .rm-sched-cell,
+    .rm-weather-panel,
+    .rm-blank,
+    .rm-tab {
+      border-color: var(--rule-light) !important;
+      background-color: rgba(255, 255, 255, 0.72) !important;
+    }
+    .rm-close {
+      background: rgba(255, 255, 255, 0.82) !important;
+      border-color: rgba(17, 17, 19, 0.12) !important;
+      color: var(--ink) !important;
+    }
+    .rm-tab.active,
+    .filter-btn.active {
+      color: var(--paper) !important;
+      background: var(--racing) !important;
     }
   </style>
 </head>
