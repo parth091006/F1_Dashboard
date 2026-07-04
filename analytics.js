@@ -232,29 +232,91 @@ const inlineLabelsPlugin = {
   }
 };
 
+// ── Custom Glassmorphism Tooltip ──
+
+function getOrCreateTooltip(chart) {
+  let tooltipEl = chart.canvas.parentNode.querySelector('.chart-tooltip-glass');
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'chart-tooltip-glass';
+    chart.canvas.parentNode.appendChild(tooltipEl);
+  }
+  return tooltipEl;
+}
+
+function externalTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  const tooltipEl = getOrCreateTooltip(chart);
+
+  // Hide if no tooltip
+  if (tooltip.opacity === 0) {
+    tooltipEl.classList.remove('visible');
+    return;
+  }
+
+  // Build title
+  let html = '';
+  if (tooltip.title && tooltip.title.length) {
+    html += `<div class="tt-title">${tooltip.title[0]}</div>`;
+  }
+
+  // Build body rows
+  if (tooltip.body) {
+    tooltip.body.forEach((bodyItem, i) => {
+      const colors = tooltip.labelColors[i];
+      const label = tooltip.dataPoints[i]?.dataset?.label || '';
+      const value = tooltip.dataPoints[i]?.parsed?.y ?? '';
+      html += `<div class="tt-row">
+        <span class="tt-color" style="background:${colors.borderColor}"></span>
+        <span class="tt-label">${label}</span>
+        <span class="tt-value">${value} pts</span>
+      </div>`;
+    });
+  }
+
+  tooltipEl.innerHTML = html;
+  tooltipEl.classList.add('visible');
+
+  // Position
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+  const tooltipWidth = tooltipEl.offsetWidth;
+  const chartWidth = chart.canvas.offsetWidth;
+  let left = positionX + tooltip.caretX + 12;
+  
+  // Flip to left side if too close to right edge
+  if (left + tooltipWidth > positionX + chartWidth - 50) {
+    left = positionX + tooltip.caretX - tooltipWidth - 12;
+  }
+
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = positionY + tooltip.caretY - 20 + 'px';
+}
+
 function makeChartOptions(titleText) {
   return {
     responsive:          true,
     maintainAspectRatio: false,
     layout:              { padding: { right: 45 } },
-    animation:           { duration: 900, easing: 'easeInOutQuart' },
+    animation: {
+      duration: 1400,
+      easing: 'easeInOutQuart',
+      delay: (context) => {
+        // Stagger each dataset so lines draw progressively
+        if (context.type === 'data' && context.mode === 'default') {
+          return context.datasetIndex * 120 + context.dataIndex * 30;
+        }
+        return 0;
+      },
+    },
     interaction:         { mode: 'index', intersect: false },
     plugins: {
       legend: {
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(8,8,8,0.96)',
-        borderColor:     'rgba(255,255,255,0.1)',
-        borderWidth:     1,
-        padding:         12,
-        titleColor:      'rgba(255,255,255,0.5)',
-        bodyColor:       '#ffffff',
-        titleFont:       { family: "'JetBrains Mono', monospace", size: 10, weight: '600' },
-        bodyFont:        { family: "'JetBrains Mono', monospace", size: 12, weight: '700' },
-        callbacks: {
-          label: ctx => ` ${ctx.dataset.label}  ${ctx.parsed.y} pts`,
-        },
+        enabled: false,
+        position: 'nearest',
+        external: externalTooltipHandler,
       },
     },
     scales: {

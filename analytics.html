@@ -59,6 +59,17 @@
     }
 
     html { scroll-behavior: smooth; }
+
+    /* ── Page Transitions ── */
+    @keyframes pageEnter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pageExit {
+      from { opacity: 1; transform: none; }
+      to   { opacity: 0; transform: translateY(-8px); }
+    }
+
     body {
       background: var(--paper);
       color: var(--ink);
@@ -66,6 +77,45 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      animation: pageEnter 0.5s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    body.page-exiting {
+      animation: pageExit 0.28s cubic-bezier(.4,0,1,1) both;
+    }
+
+    /* ── Animated Telemetry Background ── */
+    .telemetry-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .telemetry-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(225, 6, 0, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(225, 6, 0, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    @keyframes scanLine {
+      0%   { transform: translateY(-120px); }
+      100% { transform: translateY(100vh); }
+    }
+    .telemetry-scan {
+      position: absolute;
+      left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent 0%, rgba(225, 6, 0, 0.035) 50%, transparent 100%);
+      animation: scanLine 8s linear infinite;
+    }
+    .telemetry-scan-2 {
+      animation-delay: 4s;
+      height: 80px;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 23, 0.02) 50%, transparent 100%);
+      animation-duration: 12s;
     }
 
     /* ── NAV ── */
@@ -337,6 +387,70 @@
     }
     .chart-canvas-wrap.short { height: 380px; }
 
+    /* Glassmorphism custom tooltip */
+    .chart-tooltip-glass {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(16px) saturate(1.4);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 2px;
+      padding: 14px 18px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      transform: translateY(4px);
+      min-width: 160px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .chart-tooltip-glass.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chart-tooltip-glass .tt-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .chart-tooltip-glass .tt-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+    }
+
+    .chart-tooltip-glass .tt-color {
+      width: 3px;
+      height: 14px;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+
+    .chart-tooltip-glass .tt-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      flex: 1;
+    }
+
+    .chart-tooltip-glass .tt-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
     .chart-loading, .chart-empty {
       display: flex;
       flex-direction: column;
@@ -511,6 +625,7 @@
       t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
     })();
   </script>
+  <script src="effects.js"></script>
   <script src="analytics.js"></script>
 </body>
 

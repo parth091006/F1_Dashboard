@@ -285,13 +285,18 @@ async function fetchAndRenderTeamGrid() {
     countEl.textContent = `${standings.length} Constructors`;
     container.innerHTML = '';
 
+    const maxPoints = parseInt(standings[0]?.points) || 1;
+
     standings.forEach((item, index) => {
       const team = item.Constructor;
       const tId = team.constructorId;
       const isFav = localStorage.getItem(`fav_team_${tId}`) === 'true';
+      const isLeader = index === 0;
 
       const hex = TEAM_COLORS[tId] || '#8a8172';
       const delay = Math.min(index * 0.08, 1.2);
+      const pct = (parseInt(item.points) / maxPoints) * 100;
+      const barDelay = 0.6 + index * 0.12;
       
       const card = document.createElement('div');
       card.className = `team-card ${isFav ? 'is-favorite' : ''}`;
@@ -309,6 +314,7 @@ async function fetchAndRenderTeamGrid() {
           <div class="dc-pos-pts">${item.points} <span class="dc-pts">PTS</span></div>
           <button class="dc-fav-btn ${isFav ? 'active' : ''}" data-id="${tId}" aria-label="Toggle favorite">★</button>
         </div>
+        <div class="tc-bar"><div class="tc-bar-fill${isLeader ? ' leader' : ''}" style="width:${pct}%; animation-delay:${barDelay}s;"></div></div>
         <div class="dc-view-hint">View Profile</div>
       `;
 
@@ -329,6 +335,23 @@ async function fetchAndRenderTeamGrid() {
       // Card click -> modal
       card.addEventListener('click', () => {
         openTeamModal(team, item);
+      });
+
+      // 3D Tilt effect on mouse move
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const maxTilt = 8;
+        const rotateY = ((x - centerX) / centerX) * maxTilt;
+        const rotateX = ((centerY - y) / centerY) * maxTilt;
+        card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
       });
 
       container.appendChild(card);

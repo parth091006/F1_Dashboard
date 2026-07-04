@@ -125,6 +125,22 @@
       }
     }
 
+    /* ── Live Race Pulse Effects ── */
+    @keyframes recPulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); box-shadow: 0 0 0 0 rgba(225, 6, 0, 0.7); }
+      50% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 12px 4px rgba(225, 6, 0, 0.35); }
+    }
+
+    @keyframes glowText {
+      0%, 100% { text-shadow: 0 0 4px rgba(225, 6, 0, 0.3), 0 0 8px rgba(225, 6, 0, 0.1); letter-spacing: .22em; }
+      50% { text-shadow: 0 0 8px rgba(225, 6, 0, 0.6), 0 0 20px rgba(225, 6, 0, 0.25); letter-spacing: .26em; }
+    }
+
+    @keyframes waveBar {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
+
     @keyframes pulseDot {
 
       0%,
@@ -230,6 +246,16 @@
       scroll-behavior: smooth;
     }
 
+    /* ── Page Transitions ── */
+    @keyframes pageEnter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pageExit {
+      from { opacity: 1; transform: none; }
+      to   { opacity: 0; transform: translateY(-8px); }
+    }
+
     body {
       background: var(--paper);
       color: var(--ink);
@@ -238,6 +264,50 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      animation: pageEnter 0.5s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    body.page-exiting {
+      animation: pageExit 0.28s cubic-bezier(.4,0,1,1) both;
+    }
+
+    /* ── Animated Telemetry Background ── */
+    .telemetry-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .telemetry-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(225, 6, 0, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(225, 6, 0, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    @keyframes scanLine {
+      0%   { transform: translateY(-120px); }
+      100% { transform: translateY(100vh); }
+    }
+
+    .telemetry-scan {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent 0%, rgba(225, 6, 0, 0.035) 50%, transparent 100%);
+      animation: scanLine 8s linear infinite;
+    }
+
+    .telemetry-scan-2 {
+      animation-delay: 4s;
+      height: 80px;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 23, 0.02) 50%, transparent 100%);
+      animation-duration: 12s;
     }
 
     .ticker-wrap {
@@ -503,6 +573,58 @@
       border-radius: 50%;
       animation: blink 1.6s ease infinite;
     }
+
+    /* ── Live Race Pulse Components ── */
+    .live-pulse-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .live-rec-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--racing);
+      border-radius: 50%;
+      animation: recPulse 1.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .live-timing-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--racing-hot);
+      animation: glowText 2.4s ease-in-out infinite;
+      white-space: nowrap;
+    }
+
+    .telemetry-wave {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      height: 20px;
+      padding: 0 4px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 100%;
+      background: var(--racing);
+      border-radius: 1px;
+      transform-origin: center;
+      animation: waveBar 1.2s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { animation-delay: 0s; height: 14px; }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; height: 20px; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; height: 10px; }
+    .wave-bar:nth-child(4) { animation-delay: 0.45s; height: 18px; }
+    .wave-bar:nth-child(5) { animation-delay: 0.6s; height: 12px; }
+    .wave-bar:nth-child(6) { animation-delay: 0.75s; height: 16px; }
+    .wave-bar:nth-child(7) { animation-delay: 0.9s; height: 8px; }
 
     .race-hero {
       margin: 0 auto;
@@ -1794,7 +1916,7 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding: 44px 20px 60px;
+      padding: 0;
       overflow-y: auto;
       opacity: 0;
       pointer-events: none;
@@ -1809,11 +1931,15 @@
     .rmodal {
       background: var(--carbon);
       width: 100%;
-      max-width: 1100px;
-      min-height: 85vh;
+      max-width: 100%;
+      margin: 0;
+      height: 100vh;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
       border-top: 4px solid var(--racing);
       position: relative;
-      transform: translateY(32px) scale(0.96);
+      transform: translateY(32px) scale(0.98);
       transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .race-modal-overlay.open .rmodal {
@@ -1829,6 +1955,7 @@
 
     /* Modal Header */
     .rm-header {
+      flex-shrink: 0;
       padding: 30px 40px 26px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       position: relative;
@@ -1899,6 +2026,7 @@
 
     /* Session Tabs */
     .rm-tabs {
+      flex-shrink: 0;
       display: flex;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       overflow-x: auto;
@@ -1929,7 +2057,9 @@
     /* Session Content */
     .rm-content {
       padding: 28px 40px;
-      min-height: 280px;
+      min-height: 180px;
+      flex: 1 1 auto;
+      overflow-y: auto;
       overflow-x: auto;
     }
     .rm-loading, .rm-blank {
@@ -1965,35 +2095,54 @@
     /* Schedule grid */
     .rm-schedule {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 10px 0;
     }
     .rm-sched-cell {
-      background: var(--carbon-3);
-      border: 1px solid rgba(255,255,255,0.07);
-      padding: 16px 18px;
+      background: var(--carbon-2);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 3px solid var(--racing);
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .rm-sched-cell:hover {
+      transform: translateY(-4px);
+      border-top-color: var(--gold);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .rm-sched-cell.is-race {
+      border-top-color: var(--gold);
+      background: linear-gradient(180deg, rgba(212, 175, 55, 0.08) 0%, var(--carbon-2) 100%);
     }
     .rm-sched-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 8px;
+      font-size: 10px;
       letter-spacing: .2em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.35);
-      font-weight: 600;
-      margin-bottom: 9px;
+      color: var(--racing-hot);
+      font-weight: 700;
     }
+    .rm-sched-cell.is-race .rm-sched-label { color: var(--gold); }
     .rm-sched-date {
       font-family: 'Playfair Display', serif;
-      font-size: 15px;
+      font-size: 20px;
       color: #fff;
-      font-weight: 500;
-      margin-bottom: 4px;
+      font-weight: 600;
     }
     .rm-sched-time {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: rgba(255,255,255,0.45);
-      font-weight: 500;
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 700;
+      background: rgba(255,255,255,0.05);
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 4px;
     }
 
     /* Results table */
@@ -2018,6 +2167,23 @@
       vertical-align: middle;
     }
     .rm-results-table tr:last-child td { border-bottom: none; }
+
+    /* ── Dynamic Lap Delta Animation ── */
+    @keyframes deltaReveal {
+      from { opacity: 0; transform: translateX(-8px); filter: blur(3px); }
+      to   { opacity: 1; transform: translateX(0); filter: blur(0); }
+    }
+    @keyframes deltaFlash {
+      0%   { color: rgba(255,255,255,0.9); }
+      50%  { color: rgba(225, 6, 0, 0.9); }
+      100% { color: rgba(255,255,255,0.55); }
+    }
+    .rm-results-table tbody tr {
+      animation: deltaReveal 0.4s cubic-bezier(.25,.9,.3,1) both;
+    }
+    .rm-results-table tbody tr .rm-rtime {
+      animation: deltaFlash 1.2s ease both;
+    }
     .rm-rpos {
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
@@ -2077,79 +2243,87 @@
       padding-left: 16px;
     }
 
-    /* Weather section */
-    .rm-weather {
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding: 20px 40px 28px;
-    }
+    /* Weather tab section */
+    .rm-weather-panel { padding: 10px 0; }
     .rm-weather-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 11px;
       letter-spacing: .2em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.28);
-      font-weight: 600;
-      margin-bottom: 14px;
+      color: var(--racing-hot);
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .rm-weather-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 16px;
     }
     .rm-weather-day {
-      background: var(--carbon-3);
-      border: 1px solid rgba(255,255,255,0.07);
-      padding: 14px 16px;
+      background: var(--carbon-2);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 3px solid var(--racing);
+      padding: 24px 20px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .rm-weather-day:hover {
+      transform: translateY(-4px);
+      border-top-color: var(--gold);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
     .rm-wd-label {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 8px;
+      font-size: 10px;
       letter-spacing: .18em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.45);
       font-weight: 600;
     }
-    .rm-wd-icon { font-size: 22px; margin: 4px 0 2px; line-height: 1; }
+    .rm-wd-icon { font-size: 38px; margin: 8px 0 4px; line-height: 1; }
     .rm-wd-temp {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 18px;
+      font-size: 28px;
       font-weight: 700;
       color: #fff;
       font-variant-numeric: tabular-nums;
     }
-    .rm-wd-desc { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .rm-wd-desc { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 500; }
     .rm-wd-extra {
       display: flex;
-      gap: 10px;
-      margin-top: 3px;
+      gap: 14px;
+      margin-top: 8px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      color: rgba(255,255,255,0.25);
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
       flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 10px;
     }
     .rm-weather-note {
       font-family: 'Playfair Display', serif;
       font-style: italic;
-      font-size: 14px;
-      color: rgba(255,255,255,0.28);
+      font-size: 16px;
+      color: rgba(255,255,255,0.4);
       text-align: center;
-      padding: 12px 0 4px;
+      padding: 40px 0;
     }
 
     /* ─── Responsive modal ─── */
     @media (max-width: 980px) {
-      .rm-header, .rm-content, .rm-weather { padding-left: 22px; padding-right: 22px; }
+      .rm-header, .rm-content { padding-left: 22px; padding-right: 22px; }
       .rm-weather-grid { grid-template-columns: repeat(3, 1fr); }
       .nav-inner { padding: 0 20px; }
     }
     @media (max-width: 540px) {
       .rm-header { padding: 20px 16px 18px; }
       .rm-content { padding: 20px 16px; }
-      .rm-weather { padding: 16px 16px 22px; }
-      .rm-weather-grid { grid-template-columns: 1fr 1fr; }
+      .rm-weather-grid { grid-template-columns: 1fr; }
       .nav-link { padding: 0 12px; font-size: 9px; }
     }
   </style>
@@ -2198,7 +2372,20 @@
     </div>
 
     <div class="hero-sub">
-      <span class="live-badge">Live Edition</span>
+      <div class="live-pulse-group">
+        <span class="live-badge">Live Edition</span>
+        <span class="live-rec-dot"></span>
+        <span class="live-timing-label">Live Timing</span>
+        <div class="telemetry-wave">
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+          <span class="wave-bar"></span>
+        </div>
+      </div>
       <span>Dashboard · Analytics · Drivers</span>
     </div>
   </section>
@@ -2334,6 +2521,7 @@
         <button class="rm-tab hidden" data-session="sprint" role="tab">Sprint</button>
         <button class="rm-tab hidden" data-session="qualifying" role="tab">Qualifying</button>
         <button class="rm-tab hidden" data-session="race" role="tab">Race</button>
+        <button class="rm-tab" data-session="weather" role="tab">Weather</button>
       </div>
 
       <!-- Session Content -->
@@ -2344,21 +2532,10 @@
         </div>
       </div>
 
-      <!-- Weather -->
-      <div class="rm-weather" id="rmWeather">
-        <div class="rm-weather-label">Race Weekend Weather</div>
-        <div id="rmWeatherContent">
-          <div class="rm-weather-grid">
-            <div class="rm-weather-day"><div class="rm-wd-label">Fri · Practice</div><div class="rm-wd-icon">⏳</div><div class="rm-wd-temp">--°C</div><div class="rm-wd-desc">Loading...</div></div>
-            <div class="rm-weather-day"><div class="rm-wd-label">Sat · Qualifying</div><div class="rm-wd-icon">⏳</div><div class="rm-wd-temp">--°C</div><div class="rm-wd-desc">Loading...</div></div>
-            <div class="rm-weather-day"><div class="rm-wd-label">Sun · Race</div><div class="rm-wd-icon">⏳</div><div class="rm-wd-temp">--°C</div><div class="rm-wd-desc">Loading...</div></div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
+  <script src="effects.js"></script>
   <script src="app.js"></script>
 </body>
 

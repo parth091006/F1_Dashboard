@@ -445,10 +445,11 @@ function openRaceModal(race) {
   }
 
   // Show / hide tabs based on sprint weekend
-  const isSprint = !!race.Sprint;
+  const sprintRounds2026 = ['2', '4', '5', '9', '12', '16'];
+  const isSprint = !!race.Sprint || !!race.SprintShootout || sprintRounds2026.includes(String(race.round));
   document.querySelectorAll('.rm-tab').forEach(tab => {
     const s = tab.dataset.session;
-    if (s === 'schedule')                    tab.classList.remove('hidden');
+    if (s === 'schedule' || s === 'weather') tab.classList.remove('hidden');
     else if (s === 'sprint')                 tab.classList.toggle('hidden', !isSprint);
     else if (s === 'qualifying')             tab.classList.toggle('hidden', !isPast);
     else if (s === 'race')                   tab.classList.toggle('hidden', !isPast);
@@ -486,6 +487,11 @@ async function loadTabContent(session) {
   const container = document.getElementById('rmContent');
   const raceDate  = new Date(`${race.date}T${race.time || '00:00:00Z'}`);
   const isPast    = raceDate < new Date();
+
+  if (session === 'weather') {
+    container.innerHTML = race._weatherHtml || '<div class="rm-loading"><div class="rm-loading-dot"></div><div class="rm-loading-text">Loading weather forecast</div></div>';
+    return;
+  }
 
   if (session === 'schedule') {
     renderSchedule(race, container);
@@ -526,29 +532,45 @@ async function loadTabContent(session) {
 }
 
 function renderSchedule(race, container) {
-  const sessions = [
-    { label: 'Practice 1',      key: 'FirstPractice' },
-    { label: 'Practice 2',      key: 'SecondPractice' },
-    { label: 'Practice 3',      key: 'ThirdPractice' },
-    { label: 'Sprint Shootout', key: 'SprintShootout' },
-    { label: 'Sprint Race',     key: 'Sprint' },
-    { label: 'Qualifying',      key: 'Qualifying' },
-    { label: 'Race',            key: null },
-  ];
+  const sprintRounds2026 = ['2', '4', '5', '9', '12', '16'];
+  const isSprint = !!race.Sprint || !!race.SprintShootout || sprintRounds2026.includes(String(race.round));
+  const raceDate = new Date(`${race.date}T${race.time || '14:00:00Z'}`);
+  const baseTime = isNaN(raceDate) ? new Date() : raceDate;
+
+  const getSessionDate = (key, offsetHours) => {
+    if (race[key] && race[key].date) {
+      const d = new Date(`${race[key].date}T${race[key].time || '00:00:00Z'}`);
+      if (!isNaN(d)) return d;
+    }
+    return new Date(baseTime.getTime() + offsetHours * 3600 * 1000);
+  };
+
+  let sessions = [];
+  if (isSprint) {
+    sessions = [
+      { label: 'Practice 1',      d: getSessionDate('FirstPractice', -48 - 2.5) },
+      { label: 'Sprint Shootout', d: getSessionDate('SprintShootout', -48 + 1.5) },
+      { label: 'Sprint Race',     d: getSessionDate('Sprint', -24 - 2) },
+      { label: 'Qualifying',      d: getSessionDate('Qualifying', -24) },
+      { label: 'Race',            d: baseTime, isRace: true }
+    ];
+  } else {
+    sessions = [
+      { label: 'Practice 1',      d: getSessionDate('FirstPractice', -48 - 2.5) },
+      { label: 'Practice 2',      d: getSessionDate('SecondPractice', -48 + 1) },
+      { label: 'Practice 3',      d: getSessionDate('ThirdPractice', -24 - 2.5) },
+      { label: 'Qualifying',      d: getSessionDate('Qualifying', -24) },
+      { label: 'Race',            d: baseTime, isRace: true }
+    ];
+  }
 
   let html = '<div class="rm-schedule">';
   sessions.forEach(s => {
-    let d;
-    if (s.key === null) {
-      d = new Date(`${race.date}T${race.time || '00:00:00Z'}`);
-    } else if (race[s.key]) {
-      d = new Date(`${race[s.key].date}T${race[s.key].time || '00:00:00Z'}`);
-    } else return;
-
-    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    html += `<div class="rm-sched-cell">
-      <div class="rm-sched-label">${s.key === null ? 'Race' : s.label}</div>
+    const dateStr = s.d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = s.d.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST';
+    const cellClass = s.isRace ? 'rm-sched-cell is-race' : 'rm-sched-cell';
+    html += `<div class="${cellClass}">
+      <div class="rm-sched-label">${s.label}</div>
       <div class="rm-sched-date">${dateStr}</div>
       <div class="rm-sched-time">${timeStr}</div>
     </div>`;
@@ -665,16 +687,16 @@ function renderRaceResults(results, container) {
 
     const timeStyle = isFl ? 'color:#df99df; font-weight:700;' : '';
 
-    html += `<tr>
+    html += `<tr style="animation-delay:${i * 0.06}s;">
       <td><div class="rm-rpos ${posClass}">${r.position}</div></td>
       <td>
         <div class="rm-rdriver">${r.Driver.givenName.charAt(0)}. ${r.Driver.familyName}</div>
         <div class="rm-rteam"><span class="rm-team-bar" style="background:${hex}"></span>${r.Constructor.name}</div>
       </td>
-      <td class="rm-rtime" style="${timeStyle}">${leaderGapStr}</td>
-      <td class="rm-rtime">${intervalStr}</td>
+      <td class="rm-rtime" style="${timeStyle}animation-delay:${0.2 + i * 0.06}s;">${leaderGapStr}</td>
+      <td class="rm-rtime" style="animation-delay:${0.3 + i * 0.06}s;">${intervalStr}</td>
       <td class="rm-rpts">${r.points}</td>
-      <td class="rm-rtime" style="color:rgba(255,255,255,0.45);">${r.laps || '—'}</td>
+      <td class="rm-rtime" style="color:rgba(255,255,255,0.45); animation-delay:${0.25 + i * 0.06}s;">${r.laps || '—'}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -731,17 +753,27 @@ function weatherCodeToIcon(code) {
 function fmtDate(d) { return d.toISOString().split('T')[0]; }
 
 async function fetchRaceWeather(race) {
-  const wc  = document.getElementById('rmWeatherContent');
   const city = race.Circuit.Location.locality;
   const raceDate = new Date(`${race.date}T${race.time || '00:00:00Z'}`);
   const now  = new Date();
   const daysAway = Math.floor((raceDate - now) / 86400000);
 
+  const updateIfActive = () => {
+    if (currentSession === 'weather' && currentModalRace === race) {
+      const container = document.getElementById('rmContent');
+      if (container) container.innerHTML = race._weatherHtml;
+    }
+  };
+
   try {
     // Geocode
     const geoRes  = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&format=json`);
     const geoData = await geoRes.json();
-    if (!geoData.results?.length) { wc.innerHTML = '<p class="rm-weather-note">Location data not available</p>'; return; }
+    if (!geoData.results?.length) { 
+      race._weatherHtml = '<p class="rm-weather-note">Location data not available</p>'; 
+      updateIfActive(); 
+      return; 
+    }
 
     const { latitude: lat, longitude: lon } = geoData.results[0];
 
@@ -755,7 +787,8 @@ async function fetchRaceWeather(race) {
     let dailyData;
 
     if (daysAway > 15) {
-      wc.innerHTML = `<p class="rm-weather-note">Forecast available closer to race weekend · ${Math.ceil(daysAway/7)} weeks away</p>`;
+      race._weatherHtml = `<p class="rm-weather-note">Forecast available closer to race weekend · ${Math.ceil(daysAway/7)} weeks away</p>`;
+      updateIfActive();
       return;
     } else if (daysAway < -3) {
       // Past race — archive
@@ -770,12 +803,13 @@ async function fetchRaceWeather(race) {
     }
 
     if (!dailyData || !dailyData.weathercode) {
-      wc.innerHTML = '<p class="rm-weather-note">Weather data unavailable</p>';
+      race._weatherHtml = '<p class="rm-weather-note">Weather data unavailable</p>';
+      updateIfActive();
       return;
     }
 
     const dayLabels = ['Fri · Practice', 'Sat · Qualifying', 'Sun · Race'];
-    let html = '<div class="rm-weather-grid">';
+    let html = `<div class="rm-weather-panel"><div class="rm-weather-label">Race Weekend Weather · ${city}</div><div class="rm-weather-grid">`;
     for (let i = 0; i < 3; i++) {
       const code  = dailyData.weathercode?.[i];
       const maxT  = dailyData.temperature_2m_max?.[i];
@@ -799,12 +833,14 @@ async function fetchRaceWeather(race) {
         ${extraParts.length ? `<div class="rm-wd-extra">${extraParts.map(p => `<span>${p}</span>`).join('')}</div>` : ''}
       </div>`;
     }
-    html += '</div>';
-    wc.innerHTML = html;
+    html += '</div></div>';
+    race._weatherHtml = html;
+    updateIfActive();
 
   } catch (err) {
     console.error('[modal] weather fetch error:', err);
-    wc.innerHTML = '<p class="rm-weather-note">Weather data unavailable</p>';
+    race._weatherHtml = '<p class="rm-weather-note">Weather data unavailable</p>';
+    updateIfActive();
   }
 }
 

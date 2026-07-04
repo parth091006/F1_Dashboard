@@ -63,6 +63,17 @@
     }
 
     html { scroll-behavior: smooth; }
+
+    /* ── Page Transitions ── */
+    @keyframes pageEnter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pageExit {
+      from { opacity: 1; transform: none; }
+      to   { opacity: 0; transform: translateY(-8px); }
+    }
+
     body {
       background: var(--paper);
       color: var(--ink);
@@ -70,6 +81,45 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      animation: pageEnter 0.5s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    body.page-exiting {
+      animation: pageExit 0.28s cubic-bezier(.4,0,1,1) both;
+    }
+
+    /* ── Animated Telemetry Background ── */
+    .telemetry-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .telemetry-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(225, 6, 0, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(225, 6, 0, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    @keyframes scanLine {
+      0%   { transform: translateY(-120px); }
+      100% { transform: translateY(100vh); }
+    }
+    .telemetry-scan {
+      position: absolute;
+      left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent 0%, rgba(225, 6, 0, 0.035) 50%, transparent 100%);
+      animation: scanLine 8s linear infinite;
+    }
+    .telemetry-scan-2 {
+      animation-delay: 4s;
+      height: 80px;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 23, 0.02) 50%, transparent 100%);
+      animation-duration: 12s;
     }
 
     /* ── NAV ── */
@@ -257,6 +307,7 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
+      perspective: 1200px;
     }
 
     /* ── DRIVER CARD ── */
@@ -268,13 +319,29 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s, border-color 0.25s;
+      transform-style: preserve-3d;
+      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s, border-color 0.35s;
       opacity: 0;
       animation: cardReveal 0.5s cubic-bezier(.25,.9,.3,1) both;
+      will-change: transform;
+    }
+    .driver-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border: 2px solid var(--team-color, transparent);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .driver-card:hover::before {
+      opacity: 1;
     }
     .driver-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.13);
+      box-shadow:
+        0 10px 40px rgba(0,0,0,0.13),
+        0 0 24px color-mix(in srgb, var(--team-color, #888) 30%, transparent);
       border-color: var(--team-color, var(--ink));
     }
     .driver-card.is-favorite {
@@ -322,6 +389,12 @@
       opacity: 0.9;
       position: relative;
       z-index: 1;
+      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), opacity 0.35s, filter 0.35s;
+    }
+    .driver-card:hover .dc-number {
+      transform: translateY(-4px) scale(1.06);
+      opacity: 1;
+      filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--team-color, #888) 40%, transparent));
     }
 
     /* 3-letter code badge */
@@ -436,7 +509,7 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding: 40px 20px 60px;
+      padding: 0;
       overflow-y: auto;
       opacity: 0;
       pointer-events: none;
@@ -791,6 +864,7 @@
       t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
     })();
   </script>
+  <script src="effects.js"></script>
   <script src="drivers.js?v=2"></script>
 </body>
 

@@ -61,8 +61,27 @@
       from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes barFill {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+    @keyframes goldGlow {
+      0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 23, 0.3), 0 0 2px rgba(212, 160, 23, 0.5); }
+      50% { box-shadow: 0 0 16px rgba(212, 160, 23, 0.5), 0 0 4px rgba(212, 160, 23, 0.7); }
+    }
 
     html { scroll-behavior: smooth; }
+
+    /* ── Page Transitions ── */
+    @keyframes pageEnter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pageExit {
+      from { opacity: 1; transform: none; }
+      to   { opacity: 0; transform: translateY(-8px); }
+    }
+
     body {
       background: var(--paper);
       color: var(--ink);
@@ -70,6 +89,45 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      animation: pageEnter 0.5s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    body.page-exiting {
+      animation: pageExit 0.28s cubic-bezier(.4,0,1,1) both;
+    }
+
+    /* ── Animated Telemetry Background ── */
+    .telemetry-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .telemetry-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(225, 6, 0, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(225, 6, 0, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    @keyframes scanLine {
+      0%   { transform: translateY(-120px); }
+      100% { transform: translateY(100vh); }
+    }
+    .telemetry-scan {
+      position: absolute;
+      left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent 0%, rgba(225, 6, 0, 0.035) 50%, transparent 100%);
+      animation: scanLine 8s linear infinite;
+    }
+    .telemetry-scan-2 {
+      animation-delay: 4s;
+      height: 80px;
+      background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 23, 0.02) 50%, transparent 100%);
+      animation-duration: 12s;
     }
 
     /* ── NAV ── */
@@ -257,6 +315,7 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
+      perspective: 1200px;
     }
 
     /* ── TEAM CARD ── */
@@ -268,13 +327,29 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s, border-color 0.25s;
+      transform-style: preserve-3d;
+      transition: transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s, border-color 0.35s;
       opacity: 0;
       animation: cardReveal 0.5s cubic-bezier(.25,.9,.3,1) both;
+      will-change: transform;
+    }
+    .team-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border: 2px solid var(--team-color, transparent);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .team-card:hover::before {
+      opacity: 1;
     }
     .team-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.13);
+      box-shadow:
+        0 10px 40px rgba(0,0,0,0.13),
+        0 0 24px color-mix(in srgb, var(--team-color, #888) 30%, transparent);
       border-color: var(--team-color, var(--ink));
     }
     .team-card.is-favorite {
@@ -413,6 +488,31 @@
       letter-spacing: .2em;
       text-transform: uppercase;
       color: var(--ink-3);
+    }
+
+    /* ── CONSTRUCTOR PROGRESS BARS ── */
+    .tc-bar {
+      height: 4px;
+      background: var(--paper-3);
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 2px;
+    }
+
+    .tc-bar-fill {
+      height: 100%;
+      background: var(--team-color, var(--ink-3));
+      transform-origin: left;
+      transform: scaleX(0);
+      animation: barFill 1.4s cubic-bezier(.3, .9, .3, 1) both;
+      border-radius: 2px;
+      transition: width 1.2s cubic-bezier(.3, .9, .3, 1);
+    }
+
+    .tc-bar-fill.leader {
+      background: linear-gradient(90deg, var(--team-color, var(--gold)), var(--gold));
+      animation: barFill 1.4s cubic-bezier(.3, .9, .3, 1) both, goldGlow 2.4s ease-in-out infinite;
     }
 
     /* ── TEAM DETAIL MODAL ── */
@@ -870,6 +970,7 @@
       t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
     })();
   </script>
+  <script src="effects.js"></script>
   <script src="teams.js?v=1"></script>
 </body>
 

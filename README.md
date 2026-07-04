@@ -1,58 +1,70 @@
-# 🏎️ Parth's Pit Wall · F1 Dashboard
+# 🏎️ Parth's Pit Wall · F1 Command Center
 
-> A custom, real-time Formula 1 dashboard designed to track the current F1 season.
+> A custom, premium real-time Formula 1 multi-page suite designed to track the 2026 F1 season with live telemetry, analytics, driver profiles, and race results.
 
 ---
-
 
 ## Overview
-**Parth's Pit Wall** is your personal command center for everything Formula 1. It fetches live data to display driver and constructor standings, the season calendar, and a countdown to the next race, all wrapped in a premium, dark-themed interface.
+**Parth's Pit Wall** has evolved from a single dashboard into a comprehensive, multi-page Formula 1 web application. Built with a premium carbon-and-gold racing aesthetic, it fetches live F1 data to display real-time championship standings, session countdowns, detailed race results with lap intervals, driver/constructor profiles, and interactive points trajectory charts.
 
 ---
 
-## Features
+## Key Features
 
-### Live Updates
-- **Live Ticker**: A smoothly scrolling ticker across the top of the dashboard.
-- **Auto-Refresh**: Data refreshes automatically every hour in the background while the page is open.
+### 🏁 Main Dashboard (`F1_Dashboard.html`)
+- **Live Ticker**: A smoothly scrolling real-time headline ticker across the top of the dashboard.
+- **Next Race Countdown**: A live, to-the-second countdown timer for the upcoming Grand Prix with exact date, time, circuit name, and round details.
+- **Season Calendar**: A horizontal, scrollable track of all Grand Prix weekends. Completed races are marked with a racing green check (`✓`), while the upcoming race is dynamically highlighted.
+- **Race Results Table**: Detailed classification table for completed races featuring position gains/losses, interval gaps, and lap data.
+- **Championship Grid**: Instant overview of the top Drivers and Constructors standings.
 
-### Race Tracking
-- **Next Race Countdown**: A live, to-the-second countdown timer for the upcoming Grand Prix.
-- **Session Details**: Displays the exact date, time, circuit name, and round number.
-- **Season Calendar**: A horizontal, scrollable track of all races. 
-  - Completed races are marked with a racing green tick (`✓`).
-  - The next upcoming race is dynamically highlighted.
+### 📈 Interactive Analytics (`analytics.html`)
+- **Points Trajectory Charts**: Powered by **Chart.js**, visualizing season-long points progression for drivers and constructors.
+- **Performance Metrics**: Comparative visual analysis of team dominance and driver consistency across rounds.
 
-### Standings & Stats
-- **Drivers' Championship**: Full grid standings featuring driver points, teams, and point gaps to the leader.
-- **Constructors' Cup**: Team standings with visual progress bars indicating relative points.
-- **Live Stats Ribbon**: Quick-glance statistics showing the championship lead gap, last race winner, and completed races.
+### 👤 Drivers Championship (`drivers.html`)
+- **Comprehensive Profiles**: In-depth statistics, career numbers, and season performance metrics for every driver on the grid.
+- **Standings Breakdown**: Full grid standings with points gaps, podium counts, and team affiliations.
+
+### 🛡️ Teams & Constructors (`teams.html`)
+- **Constructor Deep-Dive**: Detailed team standings, driver pairings, car specifications, and relative points progress bars.
+- **Team Histories**: Visual representation of constructor performance and championship battle gaps.
 
 ---
 
 ## Technology Stack
 
-**HTML5** - Semantic structure and layout.
-**CSS3** - Custom styling, smooth CSS animations, flexbox/grid layouts, and custom variables.
-**Vanilla JS** - Asynchronous data fetching and UI updates.
-**Jolpica API** - Reliable and free endpoint (`api.jolpi.ca/ergast/f1`) for accurate F1 data.
+- **HTML5 & Vanilla CSS3**: Semantic multi-page structure with responsive grid/flexbox layouts, custom variables, and modern typography (*Playfair Display*, *Inter*, *JetBrains Mono*).
+- **Vanilla JavaScript (ES6+)**: Asynchronous data fetching, DOM manipulation, and real-time interval timers without heavy frontend frameworks.
+- **Chart.js**: High-performance HTML5 canvas rendering for telemetry and championship analytics charts.
+- **Jolpica API**: Reliable, open F1 data endpoint (`api.jolpi.ca/ergast/f1`) for accurate live season statistics and historical race results.
 
 ---
 
 ## Getting Started
 
-Running this dashboard is incredibly simple. There are **no build steps** or package managers required.
+Running **Parth's Pit Wall** requires **no build steps**, bundlers, or package managers:
 
-1. **Download**: Clone or download this repository to your local machine.
-2. **Open**: Double-click the `F1_Dashboard.html` file to open it directly in any modern web browser (e.g., Chrome, Firefox, Edge).
-3. **Enjoy**: The dashboard will automatically fetch the latest data and update the UI for you.
+1. **Clone or Download**: Clone this repository to your local machine:
+   ```bash
+   git clone https://github.com/parth091006/F1_Dashboard.git
+   ```
+2. **Launch**: Double-click `F1_Dashboard.html` to open the command center directly in any modern web browser (Chrome, Firefox, Edge, Safari).
+3. **Navigate & Explore**: Use the built-in top navigation bar to seamlessly switch between the Dashboard, Analytics, Drivers, and Teams pages.
 
 ---
 
 ## Project Structure
 
-text
-📁 F1_Project
-├── 📄 F1_Dashboard.html   # Main structural and styling file (HTML/CSS)
-├── 📄 app.js              # Logic, API fetching, and data formatting
+```text
+📁 F1_Dashboard
+├── 📄 F1_Dashboard.html   # Main dashboard: countdown, calendar, standings & race results
+├── 📄 app.js              # Dashboard logic, Ergast/Jolpica API fetching & DOM updates
+├── 📄 analytics.html      # Telemetry & points progression charts
+├── 📄 analytics.js        # Chart.js data formatting & visualization logic
+├── 📄 drivers.html        # Comprehensive driver profiles & standings grid
+├── 📄 drivers.js          # Driver data extraction & rendering logic
+├── 📄 teams.html          # Constructor standings, driver lineups & team stats
+├── 📄 teams.js            # Constructor data handling & progress calculation
 └── 📄 README.md           # Project documentation
+```
