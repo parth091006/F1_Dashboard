@@ -299,14 +299,6 @@ async function fetchAndRenderTeamGrid() {
       const delay = Math.min(index * 0.08, 1.2);
       const pct = (parseInt(item.points) / maxPoints) * 100;
       const barDelay = 0.6 + index * 0.12;
-      const ptsDiff = leaderPts - parseInt(item.points);
-      const gapPct = Math.min(100, Math.max(8, (ptsDiff / maxGapPts) * 100));
-      const gapVisual = isLeader ? '' : `
-        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
-          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${hex}; box-shadow:0 0 8px ${hex};"></span></span>
-          <span class="gap-text">−${ptsDiff} PTS</span>
-        </span>`;
-      
       const card = document.createElement('div');
       card.className = `team-card glass-card fade-up ${tId} ${isFav ? 'is-favorite' : ''} ${isLeader ? 'leader' : ''}`;
       card.style.cssText = `--team-color: ${hex}; animation-delay: ${delay}s;`;
@@ -317,7 +309,7 @@ async function fetchAndRenderTeamGrid() {
       card.innerHTML = `
         <div class="dc-number ${isLeader ? 'leader' : ''}">P${item.position}</div>
         <div class="dc-name">${team.name}</div>
-        <div class="dc-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${team.nationality}</span> ${gapVisual}</div>
+        <div class="dc-team">${team.nationality}</div>
         ${carHtml}
         <div class="dc-footer">
           <div class="dc-pos-pts ${isLeader ? 'leader' : ''}">${item.points} <span class="dc-pts">PTS</span></div>
@@ -679,16 +671,17 @@ async function fetchCareerStats(team) {
       else if (pos === 2) pClass = 'dm-pos-2';
       else if (pos === 3) pClass = 'dm-pos-3';
 
-      const isTrophy = (pos === 1 && parseInt(list.season) < 2026);
-      const posStr = pos <= 3 ? `${isTrophy ? '🏆 ' : ''}P${pos}` : `P${pos}`;
+      const isChampion = (pos === 1 && parseInt(list.season) < 2026);
+      const posStr = isChampion ? '🏆 P1 · CHAMPIONS' : `P${pos}`;
       const cName = cs.Constructor?.name;
-      const yearLabel = (cName && cName !== team.name) ? `${list.season} <span style="font-size:11px; opacity:0.7; font-weight:400;">(${cName})</span>` : list.season;
+      const baseYear = isChampion ? `🏆 ${list.season}` : list.season;
+      const yearLabel = (cName && cName !== team.name) ? `${baseYear} <span style="font-size:11px; opacity:0.7; font-weight:400;">(${cName})</span>` : baseYear;
 
       html += `
-        <tr>
+        <tr class="${isChampion ? 'champion-row' : ''}">
           <td class="dm-season-year">${yearLabel}</td>
           <td class="dm-season-pos ${pClass}">${posStr}</td>
-          <td class="dm-season-pts">${cs.points}</td>
+          <td class="dm-season-pts">${cs.points} pts</td>
         </tr>
       `;
     }

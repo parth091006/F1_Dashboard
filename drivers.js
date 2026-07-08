@@ -136,8 +136,29 @@ async function fetchAndRenderDriverGrid() {
 
     grid.innerHTML = '';
 
-    // Sort by championship position
+    // Calculate each team's total championship points (and best driver position as tiebreaker)
+    const teamPoints = {};
+    const teamMinPos = {};
+    standings.forEach(item => {
+      const teamId = item.Constructors[0]?.constructorId || 'unknown';
+      const pts = parseFloat(item.points) || 0;
+      const pos = parseInt(item.position) || 999;
+      teamPoints[teamId] = (teamPoints[teamId] || 0) + pts;
+      if (!teamMinPos[teamId] || pos < teamMinPos[teamId]) {
+        teamMinPos[teamId] = pos;
+      }
+    });
+
+    // Group drivers by team ordered by Team Championship points descending,
+    // and within each team put the lead driver first
     const sorted = [...standings].sort((a, b) => {
+      const teamA = a.Constructors[0]?.constructorId || 'unknown';
+      const teamB = b.Constructors[0]?.constructorId || 'unknown';
+      if (teamA !== teamB) {
+        const ptsDiff = (teamPoints[teamB] || 0) - (teamPoints[teamA] || 0);
+        if (ptsDiff !== 0) return ptsDiff;
+        return (teamMinPos[teamA] || 999) - (teamMinPos[teamB] || 999);
+      }
       return parseInt(a.position) - parseInt(b.position);
     });
 
@@ -157,32 +178,25 @@ async function fetchAndRenderDriverGrid() {
       const teamColor = TEAM_COLORS_DRV[teamId] || 'var(--ink-3)';
       const teamHex   = TEAM_HEX_DRV[teamId] || '#A0A0A0';
       const isFav     = d.driverId === favDriver;
+      const isLeader  = String(item.position) === '1';
       const delay     = Math.min(index * 0.06, 1.2);
       const flag      = NATIONALITY_FLAGS[d.nationality] || '';
       const number    = d.permanentNumber || '??';
-      const ptsDiff   = leaderPts - parseInt(item.points);
-      const gapPct    = Math.min(100, Math.max(8, (ptsDiff / maxGapPts) * 100));
-      const gapVisual = index === 0 ? '' : `
-        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
-          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamHex}; box-shadow:0 0 8px ${teamHex};"></span></span>
-          <span class="gap-text">−${ptsDiff} PTS</span>
-        </span>`;
-
       const card = document.createElement('div');
-      card.className = `driver-card glass-card fade-up ${teamId}${isFav ? ' is-favorite' : ''}${index === 0 ? ' leader' : ''}`;
+      card.className = `driver-card glass-card fade-up ${teamId}${isFav ? ' is-favorite' : ''}${isLeader ? ' leader' : ''}`;
       card.style.cssText = `--team-color: ${teamColor}; animation-delay: ${delay}s;`;
       card.dataset.driverId = d.driverId;
 
       const driverImgUrl = DRIVER_IMAGES[d.driverId] || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.givenName + ' ' + d.familyName)}&background=1d1d1d&color=fff&size=256&bold=true`;
 
       card.innerHTML = `
-        <div class="dc-number ${index === 0 ? 'leader' : ''}">${number}</div>
+        <div class="dc-number ${isLeader ? 'leader' : ''}">${number}</div>
         <img class="dc-image" src="${driverImgUrl}" alt="${d.givenName} ${d.familyName}">
         <div class="dc-code" style="background:${teamHex}">${d.code || d.familyName.substring(0,3).toUpperCase()}</div>
         <div class="dc-name">${d.givenName} ${d.familyName}</div>
-        <div class="dc-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${flag} ${teamName}</span> ${gapVisual}</div>
+        <div class="dc-team">${flag} ${teamName}</div>
         <div class="dc-footer">
-          <div class="dc-pos-pts ${index === 0 ? 'leader' : ''}">P${item.position}<span class="dc-pts">· ${item.points} pts</span></div>
+          <div class="dc-pos-pts ${isLeader ? 'leader' : ''}">P${item.position}<span class="dc-pts">· ${item.points} pts</span></div>
           <button class="dc-fav-btn${isFav ? ' active' : ''}" data-driver-id="${d.driverId}" title="${isFav ? 'Remove favourite' : 'Set as favourite'}" aria-label="Toggle favourite">★</button>
         </div>
         <div class="dc-view-hint">View Profile →</div>
@@ -378,12 +392,13 @@ function renderDriverModalBody(driver, totalRaces, wins, podiums, fastestLaps, c
       : '—';
     const pts      = sd?.points || '0';
     
-    const isTrophy = (pos === 1 && parseInt(s.season) < 2026);
-    const posStr   = isNaN(pos) ? (sd?.positionText && sd?.positionText !== '-' ? sd.positionText : 'NC') : (pos <= 3 ? `${isTrophy ? '🏆 ' : ''}P${pos}` : `P${pos}`);
+    const isChampion = (pos === 1 && parseInt(s.season) < 2026);
+    const posStr     = isNaN(pos) ? (sd?.positionText && sd?.positionText !== '-' ? sd.positionText : 'NC') : (isChampion ? '🏆 P1 · CHAMPION' : `P${pos}`);
+    const yearStr    = isChampion ? `🏆 ${s.season}` : s.season;
     
     return `
-      <tr>
-        <td class="dm-season-year">${s.season}</td>
+      <tr class="${isChampion ? 'champion-row' : ''}">
+        <td class="dm-season-year">${yearStr}</td>
         <td class="dm-season-team">${teamStr}</td>
         <td class="dm-season-pos ${posClass}">${posStr}</td>
         <td class="dm-season-pts">${pts} pts</td>

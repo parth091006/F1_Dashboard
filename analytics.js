@@ -372,31 +372,31 @@ function makeChartOptions(titleText) {
     },
     scales: {
       x: {
-        grid:  { color: 'rgba(17,17,19,0.08)', drawBorder: false },
+        grid:  { color: 'rgba(255, 255, 255, 0.08)', drawBorder: false },
         ticks: {
-          color: 'rgba(17,17,19,0.72)',
-          font:  { family: "'JetBrains Mono', monospace", size: 10 },
+          color: 'rgba(255, 255, 255, 0.82)',
+          font:  { family: "'JetBrains Mono', monospace", size: 11, weight: '500' },
           maxRotation: 0,
         },
         title: {
           display: true,
           text:    'Round',
-          color:   'rgba(17,17,19,0.54)',
-          font:    { family: "'JetBrains Mono', monospace", size: 9 },
+          color:   'rgba(255, 255, 255, 0.65)',
+          font:    { family: "'JetBrains Mono', monospace", size: 10, weight: '600' },
           padding: { top: 8 },
         },
       },
       y: {
-        grid:  { color: 'rgba(17,17,19,0.08)', drawBorder: false },
+        grid:  { color: 'rgba(255, 255, 255, 0.08)', drawBorder: false },
         ticks: {
-          color: 'rgba(17,17,19,0.72)',
-          font:  { family: "'JetBrains Mono', monospace", size: 10 },
+          color: 'rgba(255, 255, 255, 0.82)',
+          font:  { family: "'JetBrains Mono', monospace", size: 11, weight: '500' },
         },
         title: {
           display: true,
           text:    'Points',
-          color:   'rgba(17,17,19,0.54)',
-          font:    { family: "'JetBrains Mono', monospace", size: 9 },
+          color:   'rgba(255, 255, 255, 0.65)',
+          font:    { family: "'JetBrains Mono', monospace", size: 10, weight: '600' },
           padding: { bottom: 8 },
         },
         beginAtZero: true,

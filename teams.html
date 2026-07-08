@@ -15,29 +15,37 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
     }
-    *::-webkit-scrollbar {
-      display: none !important;
-      width: 0 !important;
-      height: 0 !important;
+    /* Sleek Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--carbon);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.35);
     }
 
     :root {
-      /* Bright Track Backgrounds */
-      --carbon: #F4EEE4;
-      --carbon-2: #E7DFD1;
-      --carbon-3: rgba(17, 17, 19, 0.05);
-      --paper: #FBF8F2;
-      --paper-2: #F1EBE0;
-      --paper-3: rgba(17, 17, 19, 0.04);
-      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 240, 228, 0.92) 100%);
+      /* Soft Dark Slate Backgrounds */
+      --carbon: #1F2228;
+      --carbon-2: #2A2E36;
+      --carbon-3: rgba(255, 255, 255, 0.06);
+      --paper: #16181D;
+      --paper-2: #21242B;
+      --paper-3: rgba(255, 255, 255, 0.05);
+      --card-bg: linear-gradient(145deg, rgba(35, 39, 46, 0.85) 0%, rgba(28, 31, 37, 0.95) 100%);
 
       /* Text Colors */
-      --ink: #101114;
-      --ink-2: #5E5A56;
-      --ink-3: #8D857B;
+      --ink: #F0F2F5;
+      --ink-2: #AEB3BC;
+      --ink-3: #787E8A;
 
       /* Accents */
       --racing: #FF3B30;
@@ -59,14 +67,14 @@
       --cadillac: #8A9099;
 
       /* Rules & Dividers */
-      --rule-light: rgba(17, 17, 19, 0.09);
-      --rule-dark: rgba(17, 17, 19, 0.14);
+      --rule-light: rgba(255, 255, 255, 0.11);
+      --rule-dark: rgba(255, 255, 255, 0.18);
     }
 
     .glass-card {
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(33, 37, 43, 0.78);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(17, 17, 19, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 18px;
       transition: all 0.3s ease;
     }
@@ -648,15 +656,18 @@
 
     /* ── TEAM DETAIL MODAL ── */
     .team-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 1000;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 0; /* Removed padding for full max size */
-      overflow-y: auto;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 999999;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 24px;
+      overflow: hidden !important;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
@@ -665,24 +676,31 @@
     }
     .team-modal-overlay.open {
       opacity: 1;
-      pointer-events: all;
+      pointer-events: auto !important;
     }
     .team-modal {
       background: var(--carbon);
       width: 100%;
-      max-width: 100%;
-      min-height: 100vh;
+      max-width: 960px;
+      max-height: 86vh;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
       border-top: 4px solid var(--racing);
+      border-radius: 14px;
       position: relative;
-      transform: translateY(32px) scale(0.98);
-      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
     }
     .team-modal-overlay.open .team-modal {
-      transform: translateY(0) scale(1);
+      transform: translateY(0);
     }
 
     /* Modal header hero */
     .dm-hero {
+      flex-shrink: 0;
       padding: 32px 40px 28px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       position: relative;
@@ -807,8 +825,11 @@
       border-radius: 50%;
     }
 
-    /* Modal body */
-    .dm-body { padding: 28px 40px 36px; }
+    .dm-body {
+      flex: 1 1 auto;
+      overflow-y: auto !important;
+      padding: 28px 40px 36px;
+    }
 
     /* F1 Car Image */
     .tm-car-container {
@@ -944,6 +965,24 @@
     .dm-pos-2 { color: #c0c0c0; }
     .dm-pos-3 { color: #cd7f32; }
     .dm-season-pts { text-align: right; color: rgba(255,255,255,0.5); }
+
+    /* Championship Winning Years */
+    .dm-history-table tr.champion-row {
+      background: rgba(212, 175, 55, 0.14);
+      box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.18);
+    }
+    .dm-history-table tr.champion-row td {
+      color: #FFD700 !important;
+      font-weight: 700 !important;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3) !important;
+    }
+    .dm-history-table tr.champion-row .dm-season-year {
+      color: #FFD700 !important;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
+    .dm-history-table tr.champion-row .dm-season-team {
+      color: #FCE694 !important;
+    }
 
     /* Skeleton Loading State */
     .dm-loading {
@@ -1208,70 +1247,6 @@
       color: var(--gold, #D4AF37);
       text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
     }
-    .drivers-hero,
-    .drivers-hero *,
-    .teams-grid-wrap,
-    .teams-grid-wrap *,
-    .ticker-wrap,
-    .ticker-wrap * {
-      color: var(--ink) !important;
-    }
-    .drivers-title em,
-    .tick .sym,
-    .dc-view-hint,
-    .dm-eyebrow,
-    .dm-meta-dot {
-      color: var(--racing) !important;
-    }
-    .tick,
-    .tick .val,
-    .tick-dot,
-    .drivers-desc,
-    .drivers-count,
-    .nav-link,
-    .nav-brand-text {
-      color: var(--ink-2) !important;
-    }
-    .team-card,
-    .team-card *,
-    .team-modal,
-    .team-modal * {
-      color: var(--ink) !important;
-    }
-    .dc-code,
-    .dc-view-hint,
-    .dm-close-btn,
-    .dm-person-name,
-    .dm-person-role,
-    .dm-name,
-    .dm-meta,
-    .dm-bio,
-    .dm-section-label,
-    .dm-stat-num,
-    .dm-stat-label,
-    .dm-history-table th,
-    .dm-history-table td,
-    .dm-season-year,
-    .dm-season-team,
-    .dm-season-pts,
-    .tm-spec-label,
-    .tm-spec-val {
-      color: var(--ink) !important;
-    }
-    .driver-modal-overlay,
-    .team-modal-overlay {
-      background: rgba(17, 17, 19, 0.34) !important;
-    }
-    .dc-code,
-    .dc-view-hint {
-      color: #fff !important;
-    }
-    .dm-pos-1,
-    .dm-pos-2,
-    .dm-pos-3,
-    .tm-spec-val strong {
-      color: var(--gold) !important;
-    }
   </style>
 </head>
 
@@ -1348,8 +1323,10 @@
   <script>
     (function () {
       const t = document.getElementById('tkTrack');
-      const mk = () => '<span class="tick"><span class="sym">Constructors\' Cup</span> <span class="val">F1 2026</span></span><span class="tick tick-dot">◆</span>';
-      t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
+      if (t) {
+        const mk = () => '<span class="tick"><span class="sym">Constructors\' Cup</span> <span class="val">F1 2026</span></span><span class="tick tick-dot">◆</span>';
+        t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
+      }
     })();
   </script>
   <script src="effects.js"></script>

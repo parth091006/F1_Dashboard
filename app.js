@@ -90,13 +90,6 @@ async function fetchDriverStandings() {
       const constructorId = item.Constructors[0]?.constructorId || 'default';
       const teamColor = TEAM_COLORS[constructorId] || 'var(--ink-3)';
       const teamName = item.Constructors[0]?.name || 'Unknown';
-      const ptsDiff = leaderPoints - parseInt(item.points);
-      const gapPct = Math.min(100, Math.max(8, (ptsDiff / maxGap) * 100));
-      const gapVisual = isLeader ? '' : `
-        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
-          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamColor}; box-shadow:0 0 8px ${teamColor};"></span></span>
-          <span class="gap-text">−${ptsDiff} PTS</span>
-        </span>`;
       const favDriver = localStorage.getItem('fav_driver');
       const isFav     = item.Driver.driverId === favDriver;
 
@@ -108,7 +101,7 @@ async function fetchDriverStandings() {
               <span class="driver-name">${item.Driver.givenName.charAt(0)}. ${item.Driver.familyName}</span>
               <span class="driver-code" style="background:${teamColor}; color:${isLeader || teamColor === 'var(--mercedes)' ? '#000' : '#fff'}; ">${item.Driver.code || item.Driver.familyName.substring(0, 3).toUpperCase()}</span>
             </div>
-            <div class="driver-team" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${teamName} · ${item.Driver.nationality.substring(0, 3).toUpperCase()}</span> ${gapVisual}</div>
+            <div class="driver-team">${teamName} · ${item.Driver.nationality.substring(0, 3).toUpperCase()}</div>
           </div>
           <div class="driver-pts-wrap">
             <div class="driver-pts">${item.points}</div>
@@ -157,14 +150,6 @@ async function fetchConstructorStandings() {
       const teamColor = TEAM_COLORS[item.Constructor.constructorId] || 'var(--ink-3)';
       const pct = (parseInt(item.points) / maxPoints) * 100;
       const isFav = item.Constructor.constructorId === favTeam;
-      const ptsDiff = conLeaderPoints - parseInt(item.points);
-      const gapPct = Math.min(100, Math.max(8, (ptsDiff / conMaxGap) * 100));
-      const gapVisual = index === 0 ? '' : `
-        <span class="gap-visual chase-pill" title="${ptsDiff} pts behind leader">
-          <span class="gap-bar-track"><span class="gap-bar-fill" style="width:${gapPct}%; background:${teamColor}; box-shadow:0 0 8px ${teamColor};"></span></span>
-          <span class="gap-text">−${ptsDiff} PTS</span>
-        </span>`;
-
       const carImgSrc = TEAM_CARS[item.Constructor.constructorId] || '';
       const carImgHTML = carImgSrc ? `<img src="${carImgSrc}" class="dash-img dash-car-img" alt="${item.Constructor.name}">` : `<div class="dash-img-placeholder"></div>`;
 
@@ -174,7 +159,7 @@ async function fetchConstructorStandings() {
             <div class="con-pos">${item.position.padStart(2, '0')}</div>
             <div class="con-info">
               <div class="con-name">${item.Constructor.name}</div>
-              <div class="con-engine" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span>${item.Constructor.nationality.substring(0, 3).toUpperCase()}</span> ${gapVisual}</div>
+              <div class="con-engine">${item.Constructor.nationality.substring(0, 3).toUpperCase()}</div>
             </div>
             ${carImgHTML}
             <div class="con-pts">${item.points}</div>

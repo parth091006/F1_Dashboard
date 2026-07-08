@@ -26,19 +26,19 @@
     }
 
     :root {
-      /* Bright Track Backgrounds */
-      --carbon: #F4EEE4;
-      --carbon-2: #E7DFD1;
-      --carbon-3: rgba(17, 17, 19, 0.05);
-      --paper: #FBF8F2;
-      --paper-2: #F1EBE0;
-      --paper-3: rgba(17, 17, 19, 0.04);
-      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 240, 228, 0.92) 100%);
+      /* Soft Dark Slate Backgrounds */
+      --carbon: #1F2228;
+      --carbon-2: #2A2E36;
+      --carbon-3: rgba(255, 255, 255, 0.06);
+      --paper: #16181D;
+      --paper-2: #21242B;
+      --paper-3: rgba(255, 255, 255, 0.05);
+      --card-bg: linear-gradient(145deg, rgba(35, 39, 46, 0.85) 0%, rgba(28, 31, 37, 0.95) 100%);
 
       /* Text Colors */
-      --ink: #101114;
-      --ink-2: #5E5A56;
-      --ink-3: #8D857B;
+      --ink: #F0F2F5;
+      --ink-2: #AEB3BC;
+      --ink-3: #787E8A;
 
       /* Accents */
       --racing: #FF3B30;
@@ -60,14 +60,14 @@
       --cadillac: #8A9099;
 
       /* Rules & Dividers */
-      --rule-light: rgba(17, 17, 19, 0.09);
-      --rule-dark: rgba(17, 17, 19, 0.14);
+      --rule-light: rgba(255, 255, 255, 0.11);
+      --rule-dark: rgba(255, 255, 255, 0.18);
     }
 
     .glass-card {
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(33, 37, 43, 0.78);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(17, 17, 19, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 18px;
       transition: all 0.3s ease;
     }
@@ -850,46 +850,6 @@
       color: var(--gold, #D4AF37);
       text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
     }
-    .analytics-hero,
-    .analytics-hero *,
-    .chart-section,
-    .chart-section *,
-    .ticker-wrap,
-    .ticker-wrap * {
-      color: var(--ink) !important;
-    }
-    .chart-section-title em,
-    .analytics-title em,
-    .tick .sym,
-    .filter-btn.active {
-      color: var(--racing) !important;
-    }
-    .chart-section-num,
-    .chart-section-sub,
-    .analytics-desc,
-    .tick,
-    .tick .val,
-    .tick-dot,
-    .nav-link,
-    .nav-brand-text {
-      color: var(--ink-2) !important;
-    }
-    .chart-section-title,
-    .analytics-title,
-    .filter-btn,
-    .chart-section,
-    .chart-section.second {
-      color: var(--ink) !important;
-    }
-    .filter-btn {
-      background: rgba(255, 255, 255, 0.72) !important;
-      border-color: var(--rule-light) !important;
-    }
-    .filter-btn:hover {
-      background: rgba(255, 255, 255, 0.9) !important;
-      color: var(--ink) !important;
-      border-color: rgba(17, 17, 19, 0.16) !important;
-    }
   </style>
 </head>
 
@@ -978,12 +938,14 @@
   <script>
     (function () {
       const t = document.getElementById('tkTrack');
-      const mk = () => '<span class="tick"><span class="sym">Analytics</span> <span class="val">F1 2026</span></span><span class="tick tick-dot">◆</span>';
-      t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
+      if (t) {
+        const mk = () => '<span class="tick"><span class="sym">Analytics</span> <span class="val">F1 2026</span></span><span class="tick tick-dot">◆</span>';
+        t.innerHTML = Array(14).fill(null).map(mk).join('') + Array(14).fill(null).map(mk).join('');
+      }
     })();
   </script>
   <script src="effects.js"></script>
-  <script src="analytics.js"></script>
+  <script src="analytics.js?v=2"></script>
 </body>
 
 </html>
